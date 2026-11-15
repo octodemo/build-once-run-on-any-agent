@@ -197,7 +197,12 @@ export function createState({ repoRoot, exampleDir }) {
                 targets: (parsed.catalogs?.targets || []).map((c) => c.pattern),
                 domains: Object.entries(parsed.domains || {}).map(([name, d]) => ({ name, entities: d?.tools || [] })),
                 grains: Object.entries(parsed.grains || {}).map(([name, g]) => ({ name, columns: g?.columns || [] })),
-                cadences: parsed.cadences || [],
+                cadences: parsed.cadences?.length
+                    ? parsed.cadences
+                    : [
+                          (parsed.entity_structure?.daily_suffix || parsed.runner?.daily) && "Daily",
+                          (parsed.entity_structure?.cumulative_suffix || parsed.runner?.cumulative) && "Cumulative",
+                      ].filter(Boolean),
                 metricPattern: parsed.naming?.metric_pattern,
                 verbs: (parsed.naming?.verbs || []).map((v) => ({ verb: v, fromManifest: added.includes(v) })),
                 unsupported: [
@@ -481,14 +486,17 @@ export function createState({ repoRoot, exampleDir }) {
                 let proofAgent = null;
                 if (review) {
                     const verdict = review.body.match(/\*\*(PASS|FAIL|PARTIAL|SKIPPED)\*\*/)?.[1] || "UNKNOWN";
-                    const summary = review.body
-                        .replace(/<details>[\s\S]*$/m, "")
+                    // Headline findings only: section headings and issue or
+                    // severity lines, with markdown removed.
+                    const visible = review.body.split("<details>")[0];
+                    const findings = visible
                         .split("\n")
-                        .filter((line) => line.trim() && !/^##|^\*\*(PASS|FAIL|PARTIAL|SKIPPED)\*\*|^[✅❌⚠️⏭️]/.test(line.trim()))
-                        .slice(0, 6)
-                        .join("\n")
-                        .slice(0, 600);
-                    proofAgent = { verdict, url: review.html_url, at: review.created_at, summary };
+                        .map((line) => line.trim())
+                        .filter((line) => /^#{2,4}\s/.test(line) || /^\*\*(Issue|Severity|Fix)[^*]*:\*\*/.test(line))
+                        .map((line) => line.replace(/^#{2,4}\s+/, "").replace(/\*\*/g, "").replace(/`/g, "").trim())
+                        .filter((line) => line && !/Proof Agent Verification/i.test(line) && !/^\W*(PASS|FAIL|PARTIAL|SKIPPED)\W*$/i.test(line))
+                        .slice(0, 6);
+                    proofAgent = { verdict, url: review.html_url, at: review.created_at, findings };
                 }
                 value.pr = {
                     ...pr,

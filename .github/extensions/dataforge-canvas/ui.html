@@ -92,7 +92,10 @@
   details summary { cursor: pointer; color: var(--muted); }
   pre.yaml { font-family: var(--mono); font-size: 12px; line-height: 1.45; max-height: 320px; overflow: auto; background: var(--panel); padding: 10px; border-radius: 8px; white-space: pre; }
   pre.yaml mark { background: var(--purple-soft); color: var(--purple); border-radius: 3px; padding: 0 2px; }
-  .files li, .activity li { font-family: var(--mono); font-size: 13px; }
+  .files li, .activity li { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  .findings li { overflow-wrap: anywhere; color: var(--fg); padding: 2px 0; }
+  .files li { display: flex; gap: 8px; align-items: baseline; }
+  .files li .badge { flex: none; }
   ul.plain { list-style: none; margin: 0; padding: 0; }
   ul.plain li { padding: 3px 0; }
   .zones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -209,7 +212,7 @@
         <dt>Metric store</dt><dd><code>${esc(f.targets.join(", "))}</code></dd>
         <dt>Entities</dt><dd>${f.domains.map((d) => `${esc(d.name)}: ${d.entities.map((e) => `<code>${esc(e)}</code>`).join(" ")}`).join("; ")}</dd>
         <dt>Grain</dt><dd>${f.grains.map((g) => `${esc(g.name)} (<code>${esc(g.columns.join(", "))}</code>)`).join(", ")}</dd>
-        <dt>Cadences</dt><dd>${esc(f.cadences.join(" and "))}</dd>
+        ${f.cadences.length ? `<dt>Cadences</dt><dd>${esc(f.cadences.join(" and "))}</dd>` : ""}
         <dt>Naming</dt><dd><code>${esc(f.metricPattern)}</code></dd>
         <dt>Verbs</dt><dd>${f.verbs.map((v) => v.fromManifest ? `<span class="new-word">${esc(v.verb)}</span>` : esc(v.verb)).join(", ")} <span class="muted">(purple: added in the manifest)</span></dd>
         <dt>Won't fake</dt><dd>${f.unsupported.map((u) => esc(u)).join("<br>") || "—"}</dd>
@@ -220,7 +223,7 @@
     const raw = m.exists ? `<details style="margin-top:10px"><summary>Open ${esc(m.path)}${m.generated ? ` · generated ${esc(m.generated)}` : ""}</summary><pre class="yaml">${esc(m.raw).replace(VERB_WORDS, "<mark>$1</mark>")}</pre></details>` : "";
     const deploy = st.found && Object.keys(st.deployment || {}).length ? `<div class="zones" style="margin-top:10px"><span class="muted">Deploy:</span>${Object.entries(st.deployment).map(([z, v]) => `<span class="badge ${v === "success" ? "ok" : v === "failed" ? "bad" : "other"}">${esc(z)} · ${esc(v)}</span>`).join('<span class="arrow">→</span>')}</div>` : "";
     const metrics = st.found && st.metrics.length ? `<div style="margin-top:10px">${st.metrics.map((x) => `<code>${esc(x.name)}</code> <span class="badge other">${esc(x.status)}</span>`).join("<br>")}</div>` : "";
-    const files = b.files.length ? `<ul class="plain files">${b.files.map((f) => `<li><span class="badge ${f.change === "added" ? "ok" : "other"}">${f.change}</span> ${esc(f.path)}</li>`).join("")}</ul>` : `<p class="empty">No changes in the example project yet.</p>`;
+    const files = b.files.length ? `<ul class="plain files">${b.files.map((f) => `<li><span class="badge ${f.change === "added" ? "ok" : "other"}">${f.change}</span><span>${esc(f.path)}</span></li>`).join("")}</ul>` : `<p class="empty">No changes in the example project yet.</p>`;
     const activity = b.activity.length ? `<ul class="plain activity">${b.activity.map((a) => `<li><span class="muted">${ago(a.at)}</span> ${esc(a.label)}</li>`).join("")}</ul>` : `<p class="empty">Skill and tool activity from this Copilot session appears here.</p>`;
     document.getElementById("build").innerHTML = `
       <div class="card"><h3>Four Dataforge skills · unchanged, loaded from the plugin</h3><div class="skills">${skills}</div></div>
@@ -253,6 +256,7 @@
         for (const d of days) {
           const want = byDay[d] || 0, got = actual[d] || 0, ok = want === got;
           allMatch = allMatch && ok;
+          if (!want && !got) continue;
           rows.push(`<tr><td>Day ${esc(d)}</td><td><code>${esc(metric)}</code></td><td class="num">${want}</td><td class="num">${got}</td><td>${ok ? '<span class="badge ok">match</span>' : '<span class="badge bad">differs</span>'}</td></tr>`);
         }
       }
@@ -278,14 +282,17 @@
     let pr = `<p class="empty">No pull request yet.</p>`;
     if (g.pr) {
       const checks = g.pr.checks.length ? g.pr.checks.map((c) => {
-        const cls = c.bucket === "pass" ? "ok" : c.bucket === "fail" ? "bad" : c.bucket === "pending" ? "wait" : "other";
-        const role = /acceptance/i.test(c.name + c.workflow) ? " · required" : /proof agent/i.test(c.name + c.workflow) ? " · advisory" : "";
-        return `<li><span class="badge ${cls}">${esc(c.bucket || c.state)}</span> ${esc(c.name)}<span class="muted">${role}</span></li>`;
+        const advisory = /proof agent/i.test(c.name + c.workflow);
+        const required = /acceptance/i.test(c.name + c.workflow);
+        // An advisory review job "passes" whenever it runs; its verdict is shown separately.
+        const label = advisory ? (c.bucket === "pass" ? "ran" : c.bucket === "fail" ? "did not run" : c.bucket || c.state) : (c.bucket || c.state);
+        const cls = advisory ? (c.bucket === "pending" ? "wait" : "other") : c.bucket === "pass" ? "ok" : c.bucket === "fail" ? "bad" : c.bucket === "pending" ? "wait" : "other";
+        return `<li><span class="badge ${cls}">${esc(label)}</span> ${esc(c.name)}<span class="muted">${required ? " · required" : advisory ? " · advisory" : ""}</span></li>`;
       }).join("") : '<li class="empty">No checks reported yet.</li>';
       const pa = g.pr.proofAgent;
       const verdict = pa ? `<div style="margin-top:12px"><h3>Proof Agent verdict</h3>
           <div class="verdict"><span class="badge ${pa.verdict === "PASS" ? "ok" : pa.verdict === "FAIL" ? "bad" : "wait"}" style="font-size:16px">${esc(pa.verdict)}</span> <a href="${esc(pa.url)}" target="_blank" rel="noreferrer" style="font-size:13px">read the review</a></div>
-          <p class="muted" style="white-space:pre-wrap">${esc(pa.summary)}</p></div>` : `<p class="empty" style="margin-top:12px">Proof Agent has not commented yet.</p>`;
+          ${pa.findings?.length ? `<ul class="plain findings">${pa.findings.map((f) => `<li>• ${esc(f)}</li>`).join("")}</ul>` : ""}</div>` : `<p class="empty" style="margin-top:12px">Proof Agent has not commented yet.</p>`;
       pr = `<div><a href="${esc(g.pr.url)}" target="_blank" rel="noreferrer"><strong>#${g.pr.number} ${esc(g.pr.title)}</strong></a> <span class="badge other">${esc(g.pr.state.toLowerCase())}</span></div>
         <ul class="plain" style="margin-top:8px">${checks}</ul>${verdict}
         <p class="muted" style="font-size:13px">The acceptance tests are the required check. Proof Agent is an advisory AI review. A person decides.</p>`;
@@ -307,8 +314,9 @@
     let text = "Run python seed.py", cls = "chip";
     if (pr) {
       const v = pr.proofAgent?.verdict;
-      text = `PR #${pr.number}${v ? ` · Proof Agent: ${v}` : " · checks running"}`;
-      cls = v === "PASS" ? "chip good" : v === "FAIL" ? "chip bad" : "chip live";
+      const tests = pr.checks.find((c) => /acceptance/i.test(c.name + c.workflow))?.bucket;
+      text = `PR #${pr.number} · tests ${tests === "pass" ? "pass" : tests === "fail" ? "fail" : "running"}${v ? ` · Proof Agent: ${v}` : ""}`;
+      cls = tests === "fail" ? "chip bad" : tests === "pass" && v === "PASS" ? "chip good" : "chip live";
     } else if (st.found && current) {
       text = `Phase ${current.n} of 7 · ${current.name}${current.status === "waiting" ? " · waiting for you" : ""}`;
       cls = current.status === "waiting" ? "chip wait" : "chip live";

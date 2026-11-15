@@ -33,6 +33,14 @@ in a GitHub issue:
 The scripted walkthrough is
 [`demos/dataforge/examples/online-marketplace/DEMO.md`](demos/dataforge/examples/online-marketplace/DEMO.md).
 
+**A complete rehearsal run** is [pull request #4](https://github.com/octodemo/build-once-run-on-any-agent/pull/4).
+Copilot built it with the unchanged Dataforge skills from
+[issue #3](https://github.com/octodemo/build-once-run-on-any-agent/issues/3).
+The acceptance tests pass in both regions. Proof Agent's advisory review
+returned FAIL, flagging how the pipelines insert dates into SQL — a real
+concern for a person to weigh, not a scripted one. It stays open, unmerged, so
+`main` keeps the starting state for the live demo.
+
 ## The story
 
 The promise sounds simple, but the edge cases are where reports go wrong. One

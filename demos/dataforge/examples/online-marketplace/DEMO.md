@@ -135,6 +135,19 @@ The pull request triggers two checks:
 Proof Agent's verdict is whatever it says on the day: PASS, FAIL or PARTIAL.
 Read it out as it is. A person decides whether to merge.
 
+In the rehearsal run, [pull request #4](https://github.com/octodemo/build-once-run-on-any-agent/pull/4),
+the acceptance tests passed in both regions, and Proof Agent returned **FAIL**:
+it flagged that the pipelines insert the runner's date and catalog names into
+SQL with f-strings. That is a fair point and a judgement call at the same
+time: the values come from the team's own runner, not from users, and the
+existing Order pipelines use the same pattern. A reasonable decision is to
+merge and raise a follow-up to validate `SNAPSHOT_DATE` in the shared runner.
+That is the point of the slide: the tests prove the rules, the AI reviewer
+raises concerns, and a person weighs them.
+
+Dataforge also manages the issue: once the pull request is open, it comments on
+the issue and may close it as delivered.
+
 ## The closing point
 
 - The four skills are the same files Shishir ships for Claude Code and Cursor,
@@ -148,9 +161,11 @@ Read it out as it is. A person decides whether to merge.
 | Symptom | What to do |
 | --- | --- |
 | No `forge-*` skills | Check **Customize → Installed** for Dataforge, or start a new session. |
+| Dataforge doesn't stop to ask | Answer anyway: when it lists its assumptions, confirm or correct them from the table in Act 3. |
 | DuckDB says a file is locked | Close any other `duckdb` session on that warehouse. |
+| Proof Agent posts a timeout | Version 1.1.2 waits a fixed 60 seconds for the review; the workflow uses a fast model to fit. Re-run the job, or show the reference pull request. |
 | Proof Agent posts an authorisation error | The organisation must allow Copilot requests from Actions. Show the reference pull request instead. |
-| Running out of time | Switch to the recording or the reference pull request. |
+| Running out of time | Switch to the recording or [pull request #4](https://github.com/octodemo/build-once-run-on-any-agent/pull/4), the completed rehearsal run. |
 
 ## Reset
 
