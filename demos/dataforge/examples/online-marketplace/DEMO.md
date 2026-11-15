@@ -54,6 +54,9 @@ pointed at them.
 
 **Canvas: The build.**
 
+Say: *"Before it writes any code, Dataforge learns how this team works and
+writes it down in one file."*
+
 > Initialize dataforge for the project in demos/dataforge/examples/online-marketplace.
 
 `forge-init` reads a few lines of seed manifest, then discovers the rest:
