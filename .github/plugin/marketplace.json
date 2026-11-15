@@ -1,0 +1,23 @@
+{
+  "name": "build-once-demo",
+  "owner": {
+    "name": "octodemo"
+  },
+  "metadata": {
+    "description": "Plugins used by the Sydney demo of Build once, run on any agent.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "dataforge",
+      "description": "Shishir Tewari's Dataforge: four agent skills that build metric pipelines from a project manifest. An unchanged snapshot of tewarishishir/dataforge at a28b22e, the same package Claude Code and Cursor load.",
+      "version": "0.1.0",
+      "source": "./demos/dataforge",
+      "author": {
+        "name": "Shishir Tewari"
+      },
+      "repository": "https://github.com/tewarishishir/dataforge",
+      "license": "MIT"
+    }
+  ]
+}

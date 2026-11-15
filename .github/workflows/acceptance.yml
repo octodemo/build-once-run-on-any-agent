@@ -1,0 +1,37 @@
+name: Acceptance tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    name: Dispatch promise acceptance tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install the DuckDB CLI
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/duckdb.tar.gz" \
+            https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-linux-amd64.tar.gz
+          mkdir -p "$RUNNER_TEMP/duckdb"
+          tar -xzf "$RUNNER_TEMP/duckdb.tar.gz" -C "$RUNNER_TEMP/duckdb"
+          dirname "$(find "$RUNNER_TEMP/duckdb" -type f -name duckdb | head -n 1)" >> "$GITHUB_PATH"
+
+      - name: Show the DuckDB version
+        run: duckdb --version
+
+      # Human-owned checks: expected values come from the agreed business rules,
+      # computed independently of the pipelines under test.
+      - name: Run the acceptance tests
+        run: python acceptance/online-marketplace/acceptance.py --days 30

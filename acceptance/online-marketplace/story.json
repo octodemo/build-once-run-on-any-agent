@@ -1,0 +1,76 @@
+{
+  "description": "Seven orders from Harbour Homewares, a fictional merchant served by the east region (Sydney fulfilment centre) that joined the marketplace last week. Day 7 is yesterday. All times are Sydney time.",
+  "merchant": {
+    "merchant_id": 1001,
+    "name": "Harbour Homewares",
+    "zone": "east"
+  },
+  "promise_hours": 48,
+  "rules": [
+    "Dispatched within 48 hours of being placed: the promise was met. Count it on the day it was dispatched.",
+    "Not dispatched when the 48 hours ran out: the promise was missed. Count it on the day the deadline passed, even if the order ships later.",
+    "Cancelled before its deadline: not counted. Cancelled after its deadline: still a missed promise.",
+    "Several dispatch attempts are still one order.",
+    "Test orders, which are soft-deleted, are ignored."
+  ],
+  "orders": [
+    {
+      "order_id": 101,
+      "what_happened": "Placed day 1 at 09:00. Dispatched day 2 at 14:00, 29 hours later.",
+      "result": "met",
+      "counted_on_day": 2
+    },
+    {
+      "order_id": 102,
+      "what_happened": "Placed day 1 at 10:00. One failed attempt on day 2. Still not dispatched.",
+      "result": "missed",
+      "counted_on_day": 3
+    },
+    {
+      "order_id": 103,
+      "what_happened": "Placed day 1 at 11:00. Cancelled day 1 at 15:00.",
+      "result": "not counted",
+      "reason": "Cancelled before its deadline."
+    },
+    {
+      "order_id": 104,
+      "what_happened": "Placed day 7 at 16:00, yesterday. Not dispatched yet.",
+      "result": "not due yet",
+      "reason": "Its deadline is tomorrow."
+    },
+    {
+      "order_id": 105,
+      "what_happened": "Placed day 1 at 13:00. Failed attempts on days 2 and 3. Dispatched day 4 at 09:00, 68 hours later.",
+      "result": "missed",
+      "counted_on_day": 3,
+      "reason": "Late, and counted once despite three attempts."
+    },
+    {
+      "order_id": 106,
+      "what_happened": "Placed day 2 at 12:00. Cancelled day 5 at 11:00, after its deadline.",
+      "result": "missed",
+      "counted_on_day": 4
+    },
+    {
+      "order_id": 107,
+      "what_happened": "A test order.",
+      "result": "ignored",
+      "reason": "Soft-deleted test order."
+    }
+  ],
+  "expected": {
+    "daily": {
+      "total_dispatch_meet_count": {
+        "2": 1
+      },
+      "total_dispatch_miss_count": {
+        "3": 2,
+        "4": 1
+      }
+    },
+    "cumulative_on_day_7": {
+      "total_dispatch_meet_count": 1,
+      "total_dispatch_miss_count": 3
+    }
+  }
+}

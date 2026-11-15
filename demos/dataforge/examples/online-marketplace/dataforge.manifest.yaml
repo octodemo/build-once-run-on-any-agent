@@ -1,0 +1,42 @@
+# =============================================================================
+# dataforge manifest -- online-marketplace example project seed
+#
+# This is the whole config boundary for the example. Everything dataforge knows
+# about this business -- its regions, entities, grain, catalogs, and naming
+# rules -- is either written here or discovered by forge-init from the code and
+# the warehouse. No skill hardcodes any of it.
+#
+# Run `python seed.py` first to build the DuckDB region files, then ask the
+# agent to "initialize dataforge" to produce dataforge.manifest.resolved.yaml
+# next to this file.
+# =============================================================================
+
+skill_version: "0.1.0"
+
+project:
+  name: "online-marketplace"
+  store_name: "marketplace_metric_store"
+
+  # Issues and pull requests for this demo live in the octodemo fork. Naming it
+  # explicitly stops gh from defaulting to the upstream repository it was
+  # forked from.
+  repository: "octodemo/build-once-run-on-any-agent"
+
+platform:
+  # duckdb needs no account and no cluster. Each region is one database file.
+  engine: "duckdb"
+
+  pipeline_framework: "spark_python"
+
+  # One <zone_id>.duckdb file per region lives here: east.duckdb (Sydney
+  # fulfilment centre) and west.duckdb (Perth fulfilment centre).
+  duckdb_dir: "warehouse"
+
+overrides:
+  naming:
+    # The existing Order pipelines only use the verbs `place` and `cancel`, so
+    # those are the only verbs forge-init can discover. Dispatch promises are
+    # met or missed, so those verbs are declared here. This is the config
+    # boundary doing its job: a new business word enters through the manifest,
+    # not through a skill.
+    verbs: ["meet", "miss"]

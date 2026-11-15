@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "build-once-demo": {
+      "source": {
+        "source": "github",
+        "repo": "octodemo/build-once-run-on-any-agent"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "dataforge@build-once-demo": true
+  }
+}
