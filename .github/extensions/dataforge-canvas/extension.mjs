@@ -6,29 +6,50 @@
 // the session. The Dataforge skills are unchanged and unaware of this canvas:
 // it is the host-specific layer, not part of the portable procedure.
 
-import { dirname, isAbsolute, resolve } from "node:path";
+import { existsSync, realpathSync } from "node:fs";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CanvasError, createCanvas, joinSession } from "@github/copilot-sdk/extension";
 import { serve } from "./server.mjs";
 import { createState } from "./state.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(HERE, "..", "..", "..");
+const REPO_ROOT = realpathSync(resolve(HERE, "..", "..", ".."));
 const DEFAULT_PROJECT = "demos/dataforge/examples/online-marketplace";
 const VIEWS = ["question", "build", "proof"];
 
 const states = new Map(); // example project directory -> state
 const instances = new Map(); // canvas instanceId -> { server, url, project, state }
 
+// Only Dataforge projects inside this repository can be opened: the folder
+// must resolve (symlinks included) under the repository root and contain a
+// seed manifest.
+function projectDir(project) {
+    let dir;
+    try {
+        dir = realpathSync(resolve(REPO_ROOT, project));
+    } catch {
+        dir = null;
+    }
+    if (!dir || !(dir === REPO_ROOT || dir.startsWith(REPO_ROOT + sep)) || !existsSync(join(dir, "dataforge.manifest.yaml"))) {
+        throw new CanvasError("invalid_project", "The project must be a Dataforge project folder inside this repository.");
+    }
+    return dir;
+}
+
 function stateFor(project) {
-    const exampleDir = isAbsolute(project) ? project : resolve(REPO_ROOT, project);
+    const exampleDir = projectDir(project);
     if (!states.has(exampleDir)) states.set(exampleDir, createState({ repoRoot: REPO_ROOT, exampleDir }));
     return states.get(exampleDir);
 }
 
 // Start recording skill and tool activity as soon as the session starts, so the
 // canvas can show what happened before it was opened.
-stateFor(DEFAULT_PROJECT);
+try {
+    stateFor(DEFAULT_PROJECT);
+} catch {
+    // The example project is missing in this checkout; the canvas reports it when opened.
+}
 
 function instance(ctx) {
     const entry = instances.get(ctx.instanceId);
@@ -50,7 +71,7 @@ const canvas = createCanvas({
         properties: {
             project: {
                 type: "string",
-                description: `Path to the Dataforge example project, relative to the repository root. Defaults to ${DEFAULT_PROJECT}.`,
+                description: `Path to a Dataforge project folder inside this repository, relative to its root. Defaults to ${DEFAULT_PROJECT}.`,
             },
             view: { type: "string", enum: VIEWS, description: "View to show first." },
         },
