@@ -15,8 +15,11 @@ agent asks about the business rules instead of guessing them.
 You need the GitHub Copilot app, the GitHub CLI signed in with access to
 `octodemo/build-once-run-on-any-agent`, the DuckDB CLI, and Python 3.9+.
 
+Run these from the root of your clone of the repository (the folder that
+contains `README.md` and `demos/`):
+
 ```bash
-brew install duckdb                                   # once
+brew install duckdb                                   # once, if you don't have it
 gh repo set-default octodemo/build-once-run-on-any-agent
 cd demos/dataforge/examples/online-marketplace
 ./reset.sh --yes                                      # builds a fresh warehouse
