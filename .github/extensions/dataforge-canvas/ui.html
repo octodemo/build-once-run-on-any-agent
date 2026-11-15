@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dataforge</title>
+<style>
+  :root {
+    --bg: var(--background-color-default, #ffffff);
+    --fg: var(--text-color-default, #1f2328);
+    --muted: var(--text-color-muted, #59636e);
+    --border: var(--border-color-default, #d1d9e0);
+    --panel: color-mix(in srgb, var(--fg) 4%, var(--bg));
+    --green: var(--true-color-green, #1a7f37);
+    --green-soft: var(--true-color-green-muted, #dafbe1);
+    --red: var(--true-color-red, #cf222e);
+    --red-soft: var(--true-color-red-muted, #ffebe9);
+    --amber: var(--true-color-yellow, #9a6700);
+    --amber-soft: var(--true-color-yellow-muted, #fff8c5);
+    --blue: var(--true-color-blue, #0969da);
+    --blue-soft: var(--true-color-blue-muted, #ddf4ff);
+    --purple: var(--true-color-purple, #8250df);
+    --purple-soft: var(--true-color-purple-muted, #fbefff);
+    --mono: var(--font-mono, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px 8px; }
+  .brand { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .brand .muted { font-weight: 400; }
+  .logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--purple), var(--blue)); }
+  .muted { color: var(--muted); }
+  .chip { border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 13px; white-space: nowrap; }
+  .chip.live { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+  .chip.wait { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+  .chip.good { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+  .chip.bad { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+  nav { display: flex; gap: 6px; padding: 0 18px; border-bottom: 1px solid var(--border); }
+  nav button {
+    font: inherit; font-size: 15px; background: none; border: 0; border-bottom: 3px solid transparent;
+    padding: 8px 10px 9px; color: var(--muted); cursor: pointer;
+  }
+  nav button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--purple); font-weight: 600; }
+  main { padding: 16px 18px 8px; }
+  section[hidden] { display: none; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  h3 { font-size: 15px; margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .grid { display: grid; gap: 14px; }
+  .two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--bg); }
+  .card.soft { background: var(--panel); }
+  .callout { border-left: 4px solid var(--purple); background: var(--purple-soft); padding: 10px 14px; border-radius: 6px; }
+  .callout.wait { border-left-color: var(--amber); background: var(--amber-soft); }
+  .issue-title { font-size: 18px; font-weight: 600; }
+  .issue-body p { margin: 8px 0; }
+  .issue-body ul { margin: 6px 0 6px 20px; padding: 0; }
+  code { font-family: var(--mono); font-size: 13px; background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+  .badge.met, .badge.ok { color: var(--green); background: var(--green-soft); border-color: var(--green); }
+  .badge.missed, .badge.bad { color: var(--red); background: var(--red-soft); border-color: var(--red); }
+  .badge.other { color: var(--muted); background: var(--panel); border-color: var(--border); }
+  .badge.wait { color: var(--amber); background: var(--amber-soft); border-color: var(--amber); }
+  .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .skill { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .skill .name { font-family: var(--mono); font-weight: 600; }
+  .skill.active { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); animation: pulse 1.6s ease-in-out infinite; }
+  .skill.used .name::after { content: " ✓"; color: var(--green); }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--purple-soft); } }
+  .phases { list-style: none; margin: 0; padding: 0; }
+  .phases li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .phases li:last-child { border-bottom: 0; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex: none; border: 2px solid var(--border); color: var(--muted); }
+  .done .dot { background: var(--green); border-color: var(--green); color: #fff; }
+  .current .dot { border-color: var(--purple); color: var(--purple); }
+  .waiting .dot { border-color: var(--amber); color: var(--amber); }
+  .current .label, .waiting .label { font-weight: 600; }
+  dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; }
+  dl.facts dt { color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  .new-word { color: var(--purple); font-weight: 600; }
+  details summary { cursor: pointer; color: var(--muted); }
+  pre.yaml { font-family: var(--mono); font-size: 12px; line-height: 1.45; max-height: 320px; overflow: auto; background: var(--panel); padding: 10px; border-radius: 8px; white-space: pre; }
+  pre.yaml mark { background: var(--purple-soft); color: var(--purple); border-radius: 3px; padding: 0 2px; }
+  .files li, .activity li { font-family: var(--mono); font-size: 13px; }
+  ul.plain { list-style: none; margin: 0; padding: 0; }
+  ul.plain li { padding: 3px 0; }
+  .zones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .arrow { color: var(--muted); }
+  .verdict { font-size: 20px; font-weight: 700; }
+  .empty { color: var(--muted); font-style: italic; }
+  .bar { height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden; min-width: 60px; }
+  .bar span { display: block; height: 100%; background: var(--red); }
+  footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 18px 14px; font-size: 12px; color: var(--muted); }
+  footer button { font: inherit; border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  @media (max-width: 760px) { .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo" aria-hidden="true"></span> Dataforge <span class="muted">· <span id="project">online-marketplace</span></span></div>
+  <div id="status" class="chip">Loading…</div>
+</header>
+<nav role="tablist" aria-label="Views">
+  <button role="tab" data-view="question" aria-selected="true">1 · The question</button>
+  <button role="tab" data-view="build" aria-selected="false">2 · The build</button>
+  <button role="tab" data-view="proof" aria-selected="false">3 · The proof</button>
+</nav>
+<main>
+  <section id="question" role="tabpanel"></section>
+  <section id="build" role="tabpanel" hidden></section>
+  <section id="proof" role="tabpanel" hidden></section>
+</main>
+<footer>
+  <span>Everything here is read from real files, a private copy of each warehouse, and GitHub. Nothing is simulated. <span id="updated"></span></span>
+  <button id="refresh" type="button">Refresh</button>
+</footer>
+<script>
+  const RESULT_CLASS = { met: "met", missed: "missed" };
+  const VERB_WORDS = /\b(east|west|merchant|merchant_id|fulfilment|order|Order|dispatch|Dispatch|meet|miss|place|cancel|demo_gold_commerce|demo_gold_marketplace_metric_store)\b/g;
+  let view = new URLSearchParams(location.search).get("view") || localStorage.getItem("dataforge-view") || "question";
+  let lastSeq = null;
+  let latest = null;
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+  function md(text) {
+    const out = [];
+    for (const raw of String(text || "").split(/\n\s*\n/)) {
+      const lines = raw.split("\n");
+      if (lines.every((l) => /^\s*-\s+/.test(l) || /^\s{2,}\S/.test(l))) {
+        const items = [];
+        for (const l of lines) {
+          if (/^\s*-\s+/.test(l)) items.push(l.replace(/^\s*-\s+/, ""));
+          else items[items.length - 1] += " " + l.trim();
+        }
+        out.push("<ul>" + items.map((i) => `<li>${inline(i)}</li>`).join("") + "</ul>");
+      } else {
+        out.push(`<p>${inline(lines.join(" "))}</p>`);
+      }
+    }
+    return out.join("");
+  }
+  const ago = (iso) => {
+    if (!iso) return "";
+    const s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : new Date(iso).toLocaleTimeString();
+  };
+
+  function setView(name) {
+    view = name;
+    localStorage.setItem("dataforge-view", name);
+    for (const b of document.querySelectorAll("nav button")) b.setAttribute("aria-selected", String(b.dataset.view === name));
+    for (const s of document.querySelectorAll("main section")) s.hidden = s.id !== name;
+  }
+
+  function renderQuestion(s) {
+    const story = s.question.story;
+    const live = s.question.issue.live;
+    const issueLink = live ? `<a href="${esc(live.url)}" target="_blank" rel="noreferrer">#${live.number}</a> · ${esc(live.state?.toLowerCase())}` : `<span class="muted">not opened on GitHub yet</span>`;
+    const orders = story ? story.orders.map((o) => {
+      const cls = RESULT_CLASS[o.result] || "other";
+      const when = o.counted_on_day ? ` · day ${o.counted_on_day}` : "";
+      return `<tr><td class="num">${o.order_id}</td><td>${esc(o.what_happened)}${o.reason ? `<div class="muted">${esc(o.reason)}</div>` : ""}</td><td><span class="badge ${cls}">${esc(o.result)}${esc(when)}</span></td></tr>`;
+    }).join("") : "";
+    document.getElementById("question").innerHTML = `
+      <div class="grid two">
+        <div class="card">
+          <h3>GitHub issue ${issueLink}</h3>
+          <div class="issue-title">${esc(live?.title || "Track our 48-hour dispatch promise")}</div>
+          <div class="issue-body">${md(s.question.issue.body)}</div>
+        </div>
+        <div class="grid">
+          <div class="callout"><strong>The promise:</strong> every order leaves a fulfilment centre within ${story?.promise_hours ?? 48} hours of being placed. Two regions: <strong>east</strong> (Sydney) and <strong>west</strong> (Perth).</div>
+          ${story ? `<div class="card">
+            <h3>${esc(story.merchant.name)} · ${esc(story.merchant.zone)}</h3>
+            <p class="muted" style="margin-top:0">${esc(story.description)}</p>
+            <table><thead><tr><th class="num">Order</th><th>What happened</th><th>Agreed result</th></tr></thead><tbody>${orders}</tbody></table>
+          </div>` : ""}
+        </div>
+      </div>
+      ${story ? `<div class="card soft" style="margin-top:14px"><h3>Agreed rules (human-owned acceptance tests)</h3><ul class="plain">${story.rules.map((r) => `<li>• ${esc(r)}</li>`).join("")}</ul></div>` : ""}`;
+  }
+
+  function renderBuild(s) {
+    const b = s.build;
+    const skills = b.skills.map((k) => `<div class="skill ${k.active ? "active" : ""} ${k.uses ? "used" : ""}">
+        <div class="name">${esc(k.name)}</div><div class="muted">${esc(k.role)}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">${k.uses ? `used ${k.uses}× · ${ago(new Date(k.last).toISOString())}` : "not used yet"}</div></div>`).join("");
+    const st = b.state;
+    const phases = b.phases.map((p) => `<li class="${p.status}"><span class="dot">${p.status === "done" ? "✓" : p.n}</span><span class="label">${esc(p.name)}</span>${p.status === "waiting" ? '<span class="badge wait">waiting for a person</span>' : p.status === "current" ? '<span class="badge other">in progress</span>' : ""}</li>`).join("");
+    const m = b.manifest;
+    let facts = `<p class="empty">No resolved manifest yet. Ask Copilot to initialize dataforge.</p>`;
+    if (m.exists && m.facts) {
+      const f = m.facts;
+      facts = `<dl class="facts">
+        <dt>Regions</dt><dd class="zones">${f.deploymentOrder.map((z) => `<span class="badge other">${esc(z)}</span>`).join('<span class="arrow">→</span>')}</dd>
+        <dt>Source</dt><dd><code>${esc(f.sources.join(", "))}</code></dd>
+        <dt>Metric store</dt><dd><code>${esc(f.targets.join(", "))}</code></dd>
+        <dt>Entities</dt><dd>${f.domains.map((d) => `${esc(d.name)}: ${d.entities.map((e) => `<code>${esc(e)}</code>`).join(" ")}`).join("; ")}</dd>
+        <dt>Grain</dt><dd>${f.grains.map((g) => `${esc(g.name)} (<code>${esc(g.columns.join(", "))}</code>)`).join(", ")}</dd>
+        <dt>Cadences</dt><dd>${esc(f.cadences.join(" and "))}</dd>
+        <dt>Naming</dt><dd><code>${esc(f.metricPattern)}</code></dd>
+        <dt>Verbs</dt><dd>${f.verbs.map((v) => v.fromManifest ? `<span class="new-word">${esc(v.verb)}</span>` : esc(v.verb)).join(", ")} <span class="muted">(purple: added in the manifest)</span></dd>
+        <dt>Won't fake</dt><dd>${f.unsupported.map((u) => esc(u)).join("<br>") || "—"}</dd>
+      </dl>`;
+    } else if (m.exists) {
+      facts = `<p class="muted">Resolved manifest found; showing it as text.</p>`;
+    }
+    const raw = m.exists ? `<details style="margin-top:10px"><summary>Open ${esc(m.path)}${m.generated ? ` · generated ${esc(m.generated)}` : ""}</summary><pre class="yaml">${esc(m.raw).replace(VERB_WORDS, "<mark>$1</mark>")}</pre></details>` : "";
+    const deploy = st.found && Object.keys(st.deployment || {}).length ? `<div class="zones" style="margin-top:10px"><span class="muted">Deploy:</span>${Object.entries(st.deployment).map(([z, v]) => `<span class="badge ${v === "success" ? "ok" : v === "failed" ? "bad" : "other"}">${esc(z)} · ${esc(v)}</span>`).join('<span class="arrow">→</span>')}</div>` : "";
+    const metrics = st.found && st.metrics.length ? `<div style="margin-top:10px">${st.metrics.map((x) => `<code>${esc(x.name)}</code> <span class="badge other">${esc(x.status)}</span>`).join("<br>")}</div>` : "";
+    const files = b.files.length ? `<ul class="plain files">${b.files.map((f) => `<li><span class="badge ${f.change === "added" ? "ok" : "other"}">${f.change}</span> ${esc(f.path)}</li>`).join("")}</ul>` : `<p class="empty">No changes in the example project yet.</p>`;
+    const activity = b.activity.length ? `<ul class="plain activity">${b.activity.map((a) => `<li><span class="muted">${ago(a.at)}</span> ${esc(a.label)}</li>`).join("")}</ul>` : `<p class="empty">Skill and tool activity from this Copilot session appears here.</p>`;
+    document.getElementById("build").innerHTML = `
+      <div class="card"><h3>Four Dataforge skills · unchanged, loaded from the plugin</h3><div class="skills">${skills}</div></div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="card"><h3>forge-builder phases ${st.found ? `· <span class="muted" style="text-transform:none">${esc(st.buildId)}</span>` : ""}</h3>
+          ${st.found ? "" : '<p class="empty" style="margin-top:0">Waiting for forge-builder to write its build state.</p>'}
+          ${st.blocking ? `<div class="callout wait" style="margin-bottom:10px"><strong>Waiting for a person:</strong> ${esc(typeof st.blocking === "string" ? st.blocking : JSON.stringify(st.blocking))}</div>` : ""}
+          <ul class="phases">${phases}</ul>${metrics}${deploy}
+        </div>
+        <div class="card"><h3>What Dataforge learned · the business lives in one file</h3>${facts}${raw}</div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="card"><h3>Files changed in the project</h3>${files}</div>
+        <div class="card"><h3>Activity</h3>${activity}</div>
+      </div>`;
+  }
+
+  function renderProof(s) {
+    const w = s.proof.warehouse;
+    const story = s.proof.story;
+    const zones = Object.entries(w.zones || {});
+    const east = story ? w.zones?.[story.merchant.zone] : null;
+    let storyCheck = `<p class="empty">Appears once the new metrics are loaded into the ${esc(story?.merchant.zone || "east")} warehouse.</p>`;
+    if (story && east?.available && east.story) {
+      const rows = [];
+      let allMatch = true;
+      for (const [metric, byDay] of Object.entries(story.expected.daily)) {
+        const actual = east.story.actual[metric] || {};
+        const days = [...new Set([...Object.keys(byDay), ...Object.keys(actual)])].sort();
+        for (const d of days) {
+          const want = byDay[d] || 0, got = actual[d] || 0, ok = want === got;
+          allMatch = allMatch && ok;
+          rows.push(`<tr><td>Day ${esc(d)}</td><td><code>${esc(metric)}</code></td><td class="num">${want}</td><td class="num">${got}</td><td>${ok ? '<span class="badge ok">match</span>' : '<span class="badge bad">differs</span>'}</td></tr>`);
+        }
+      }
+      storyCheck = `<p style="margin-top:0">${allMatch ? '<span class="badge ok">Matches the agreed rules</span>' : '<span class="badge bad">Does not match the agreed rules</span>'}</p>
+        <table><thead><tr><th>Day</th><th>Metric</th><th class="num">Expected</th><th class="num">Pipeline</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+    }
+    const regions = zones.length ? zones.map(([zone, z]) => {
+      if (!z.available) return `<div class="card"><h3>${esc(zone)}</h3><p class="empty">${esc(z.note)}</p></div>`;
+      if (!z.newEntities.length) return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney" : zone === "west" ? "Perth" : ""}</h3><p class="empty">No new metric tables yet. Existing: ${esc(z.entities.join(", ") || "none")}.</p></div>`;
+      const metricNames = [...new Set(z.merchants.flatMap((m) => Object.keys(m.metrics)))].sort();
+      const meet = metricNames.find((n) => /_meet_/.test(n)), miss = metricNames.find((n) => /_miss_/.test(n));
+      const rows = [...z.merchants].sort((a, b) => (b.metrics[miss] || 0) - (a.metrics[miss] || 0)).map((m) => {
+        const met = m.metrics[meet] || 0, missed = m.metrics[miss] || 0, rate = met + missed ? missed / (met + missed) : 0;
+        return `<tr><td>${esc(m.name)}</td><td class="num">${met}</td><td class="num">${missed}</td><td class="num">${(rate * 100).toFixed(0)}%</td><td><div class="bar"><span style="width:${Math.round(rate * 100)}%"></span></div></td></tr>`;
+      }).join("");
+      const totals = z.merchants.reduce((t, m) => ({ met: t.met + (m.metrics[meet] || 0), missed: t.missed + (m.metrics[miss] || 0) }), { met: 0, missed: 0 });
+      const totalRate = totals.met + totals.missed ? Math.round((totals.missed / (totals.met + totals.missed)) * 100) : 0;
+      return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney" : zone === "west" ? "Perth" : ""} <span class="muted" style="text-transform:none">· running totals to ${esc(z.latest?.date || "?")} (${z.latest?.days || 0} days loaded)</span></h3>
+        <p style="margin:0 0 8px"><strong>${totals.met.toLocaleString()}</strong> promises met · <strong>${totals.missed.toLocaleString()}</strong> missed <span class="muted">(${totalRate}%)</span></p>
+        <table><thead><tr><th>Merchant</th><th class="num">Met</th><th class="num">Missed</th><th class="num">Missed %</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join("") : `<div class="card"><p class="empty">No warehouse yet. Run <code>python seed.py</code> in the example folder.</p></div>`;
+    const g = s.proof.github;
+    let pr = `<p class="empty">No pull request yet.</p>`;
+    if (g.pr) {
+      const checks = g.pr.checks.length ? g.pr.checks.map((c) => {
+        const cls = c.bucket === "pass" ? "ok" : c.bucket === "fail" ? "bad" : c.bucket === "pending" ? "wait" : "other";
+        const role = /acceptance/i.test(c.name + c.workflow) ? " · required" : /proof agent/i.test(c.name + c.workflow) ? " · advisory" : "";
+        return `<li><span class="badge ${cls}">${esc(c.bucket || c.state)}</span> ${esc(c.name)}<span class="muted">${role}</span></li>`;
+      }).join("") : '<li class="empty">No checks reported yet.</li>';
+      const pa = g.pr.proofAgent;
+      const verdict = pa ? `<div style="margin-top:12px"><h3>Proof Agent verdict</h3>
+          <div class="verdict"><span class="badge ${pa.verdict === "PASS" ? "ok" : pa.verdict === "FAIL" ? "bad" : "wait"}" style="font-size:16px">${esc(pa.verdict)}</span> <a href="${esc(pa.url)}" target="_blank" rel="noreferrer" style="font-size:13px">read the review</a></div>
+          <p class="muted" style="white-space:pre-wrap">${esc(pa.summary)}</p></div>` : `<p class="empty" style="margin-top:12px">Proof Agent has not commented yet.</p>`;
+      pr = `<div><a href="${esc(g.pr.url)}" target="_blank" rel="noreferrer"><strong>#${g.pr.number} ${esc(g.pr.title)}</strong></a> <span class="badge other">${esc(g.pr.state.toLowerCase())}</span></div>
+        <ul class="plain" style="margin-top:8px">${checks}</ul>${verdict}
+        <p class="muted" style="font-size:13px">The acceptance tests are the required check. Proof Agent is an advisory AI review. A person decides.</p>`;
+    } else if (g.error) {
+      pr = `<p class="empty">${esc(g.error)}</p>`;
+    }
+    document.getElementById("proof").innerHTML = `
+      <div class="grid two">
+        <div class="card"><h3>Story orders · expected vs pipeline</h3>${storyCheck}</div>
+        <div class="card"><h3>Pull request</h3>${pr}</div>
+      </div>
+      <div class="grid two" style="margin-top:14px">${regions}</div>`;
+  }
+
+  function renderStatus(s) {
+    const el = document.getElementById("status");
+    const st = s.build.state, pr = s.proof.github.pr;
+    const current = s.build.phases.find((p) => p.status === "current" || p.status === "waiting");
+    let text = "Run python seed.py", cls = "chip";
+    if (pr) {
+      const v = pr.proofAgent?.verdict;
+      text = `PR #${pr.number}${v ? ` · Proof Agent: ${v}` : " · checks running"}`;
+      cls = v === "PASS" ? "chip good" : v === "FAIL" ? "chip bad" : "chip live";
+    } else if (st.found && current) {
+      text = `Phase ${current.n} of 7 · ${current.name}${current.status === "waiting" ? " · waiting for you" : ""}`;
+      cls = current.status === "waiting" ? "chip wait" : "chip live";
+    } else if (st.found) {
+      text = `Build ${st.status}`;
+      cls = "chip good";
+    } else if (s.build.manifest.exists) {
+      text = "Manifest resolved · ready to build";
+      cls = "chip live";
+    } else if (s.proof.warehouse.built) {
+      text = "Warehouse ready · initialize dataforge";
+    }
+    el.className = cls;
+    el.textContent = text;
+  }
+
+  function render(s) {
+    latest = s;
+    document.getElementById("project").textContent = s.project.name;
+    renderStatus(s);
+    renderQuestion(s);
+    renderBuild(s);
+    renderProof(s);
+    document.getElementById("updated").textContent = `Updated ${new Date(s.generatedAt).toLocaleTimeString()}.`;
+    if (s.requestedView?.name && s.requestedView.seq !== lastSeq) {
+      if (lastSeq !== null || s.requestedView.seq > 0) setView(s.requestedView.name);
+    }
+    lastSeq = s.requestedView?.seq ?? 0;
+  }
+
+  async function load(force) {
+    try {
+      const res = await fetch(force ? "state?force=1" : "state", { cache: "no-store" });
+      if (res.ok) render(await res.json());
+    } catch {
+      document.getElementById("status").textContent = "Reconnecting…";
+    }
+  }
+
+  for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => setView(b.dataset.view));
+  document.getElementById("refresh").addEventListener("click", () => load(true));
+  setView(view);
+  load(false);
+  setInterval(() => load(false), 2000);
+</script>
+</body>
+</html>

@@ -1,3 +1,6 @@
 node_modules/
 dist/
 .DS_Store
+
+# Personal Copilot overrides (never committed)
+.github/copilot/settings.local.json
