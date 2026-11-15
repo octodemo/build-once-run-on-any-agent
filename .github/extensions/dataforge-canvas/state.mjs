@@ -89,9 +89,24 @@ function issueBody(markdown) {
     return (markdown || "").replace(/<!--[\s\S]*?-->/g, "").trim();
 }
 
+// Schema and table names are interpolated into SQL, so only plain identifiers
+// are accepted, whether they come from config.py or from table names.
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function identifier(name, what) {
+    if (typeof name !== "string" || !IDENTIFIER.test(name)) {
+        throw new Error(`unexpected ${what} name ${JSON.stringify(String(name).slice(0, 60))}`);
+    }
+    return name;
+}
+
 function catalogNames(configPy) {
     const names = [...(configPy || "").matchAll(/_catalog\("([^"]+)"\)/g)].map((m) => m[1]);
-    return { source: names[0] || "demo_gold_commerce", target: names[1] || "demo_gold_marketplace_metric_store" };
+    const pick = (value, fallback) => (IDENTIFIER.test(value || "") ? value : fallback);
+    return {
+        source: pick(names[0], "demo_gold_commerce"),
+        target: pick(names[1], "demo_gold_marketplace_metric_store"),
+    };
 }
 
 export function createState({ repoRoot, exampleDir }) {
@@ -351,14 +366,14 @@ export function createState({ repoRoot, exampleDir }) {
                     ...new Set(
                         tables.rows
                             .map((r) => r.table_name.match(/^(.+)_Merchant_Metrics_Snapshot_(Daily|Cumulative)$/)?.[1])
-                            .filter(Boolean),
+                            .filter((name) => name && IDENTIFIER.test(name)),
                     ),
                 ];
                 const newEntities = entities.filter((e) => e !== "Order");
                 const zoneInfo = { available: true, entities, newEntities, merchants: [], story: null, latest: null };
                 const entity = newEntities.includes(newEntityHint) ? newEntityHint : newEntities[0];
                 if (entity) {
-                    const cumulative = `${target}."${entity}_Merchant_Metrics_Snapshot_Cumulative"`;
+                    const cumulative = `${identifier(target, "schema")}."${identifier(entity, "entity")}_Merchant_Metrics_Snapshot_Cumulative"`;
                     const latest = await duckJson(
                         copy,
                         `SELECT CAST(MAX(SNAPSHOT_DATE) AS VARCHAR) AS d, COUNT(DISTINCT SNAPSHOT_DATE) AS days FROM ${cumulative};`,
@@ -381,7 +396,7 @@ export function createState({ repoRoot, exampleDir }) {
                         zoneInfo.merchants = [...byMerchant.values()];
                     }
                     if (story && zone === story.merchant.zone) {
-                        const daily = `${target}."${entity}_Merchant_Metrics_Snapshot_Daily"`;
+                        const daily = `${identifier(target, "schema")}."${identifier(entity, "entity")}_Merchant_Metrics_Snapshot_Daily"`;
                         const lastDay = await duckJson(copy, `SELECT CAST(CAST(MAX(placed_at) AS DATE) AS VARCHAR) AS d FROM ${source}.orders;`);
                         const storyRows = await duckJson(
                             copy,
