@@ -28,8 +28,8 @@ platform:
 
   pipeline_framework: "spark_python"
 
-  # One <zone_id>.duckdb file per region lives here: east.duckdb (Sydney
-  # fulfilment centre) and west.duckdb (Perth fulfilment centre).
+  # One <zone_id>.duckdb file per region lives here: east.duckdb (Sydney East
+  # fulfilment centre) and west.duckdb (Sydney West fulfilment centre).
   duckdb_dir: "warehouse"
 
 overrides:

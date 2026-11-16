@@ -22,7 +22,7 @@ in a GitHub issue:
 1. **Copilot builds it with Dataforge.** In the GitHub Copilot app, Shishir
    Tewari's four Dataforge skills — unchanged — learn how this team builds
    metrics, ask about the business rules, write the pipeline and its tests,
-   wait for a person to approve, deploy to Sydney then Perth, and open a pull
+   wait for a person to approve, deploy to Sydney East then Sydney West, and open a pull
    request.
 2. **A canvas shows what is happening.** A side panel in the Copilot app shows
    the question, the build and the results, read from real files.
@@ -91,7 +91,7 @@ erDiagram
 ```
 
 - **`merchants`**: the businesses that sell on the marketplace. 12 in `east`
-  (Sydney) and 6 in `west` (Perth).
+  (Sydney East) and 6 in `west` (Sydney West).
 - **`orders`**: one row per order — who sold it, when it was placed, and when it
   was cancelled, if it was. `is_deleted` marks test orders.
 - **`dispatch_attempts`**: one row every time a fulfilment centre tries to send

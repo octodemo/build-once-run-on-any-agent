@@ -39,7 +39,7 @@ Then ask Copilot:
 
 **Canvas: The question.** The marketplace promises that every order leaves a
 fulfilment centre within 48 hours. There are two regions, each with its own
-warehouse: `east` (Sydney) and `west` (Perth).
+warehouse: `east` (Sydney East) and `west` (Sydney West).
 
 Walk through Harbour Homewares' seven orders. Two are worth pausing on:
 

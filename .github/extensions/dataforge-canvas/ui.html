@@ -253,7 +253,7 @@
           <div class="issue-body">${md(s.question.issue.body)}</div>
         </div>
         <div class="grid">
-          <div class="callout"><strong>The promise:</strong> every order leaves a fulfilment centre within ${story?.promise_hours ?? 48} hours of being placed. Two regions: <strong>east</strong> (Sydney) and <strong>west</strong> (Perth).</div>
+          <div class="callout"><strong>The promise:</strong> every order leaves a fulfilment centre within ${story?.promise_hours ?? 48} hours of being placed. Two regions: <strong>east</strong> (Sydney East) and <strong>west</strong> (Sydney West).</div>
           ${story ? `<div class="card">
             <h3>${esc(story.merchant.name)} · ${esc(story.merchant.zone)}</h3>
             <p class="muted" style="margin-top:0">${esc(story.description)}</p>
@@ -412,7 +412,7 @@
     }
     const regions = zones.length ? zones.map(([zone, z]) => {
       if (!z.available) return `<div class="card"><h3>${esc(zone)}</h3><p class="empty">${esc(z.note)}</p></div>`;
-      if (!z.newEntities.length) return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney" : zone === "west" ? "Perth" : ""}</h3><p class="empty">No new metric tables yet. Existing: ${esc(z.entities.join(", ") || "none")}.</p></div>`;
+      if (!z.newEntities.length) return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney East" : zone === "west" ? "Sydney West" : ""}</h3><p class="empty">No new metric tables yet. Existing: ${esc(z.entities.join(", ") || "none")}.</p></div>`;
       const metricNames = [...new Set(z.merchants.flatMap((m) => Object.keys(m.metrics)))].sort();
       const meet = metricNames.find((n) => /_meet_/.test(n)), miss = metricNames.find((n) => /_miss_/.test(n));
       const rows = [...z.merchants].sort((a, b) => (b.metrics[miss] || 0) - (a.metrics[miss] || 0)).map((m) => {
@@ -421,7 +421,7 @@
       }).join("");
       const totals = z.merchants.reduce((t, m) => ({ met: t.met + (m.metrics[meet] || 0), missed: t.missed + (m.metrics[miss] || 0) }), { met: 0, missed: 0 });
       const totalRate = totals.met + totals.missed ? Math.round((totals.missed / (totals.met + totals.missed)) * 100) : 0;
-      return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney" : zone === "west" ? "Perth" : ""} <span class="muted" style="text-transform:none">· running totals to ${esc(z.latest?.date || "?")} (${z.latest?.days || 0} days loaded)</span></h3>
+      return `<div class="card"><h3>${esc(zone)} · ${zone === "east" ? "Sydney East" : zone === "west" ? "Sydney West" : ""} <span class="muted" style="text-transform:none">· running totals to ${esc(z.latest?.date || "?")} (${z.latest?.days || 0} days loaded)</span></h3>
         <p style="margin:0 0 8px"><strong>${totals.met.toLocaleString()}</strong> promises met · <strong>${totals.missed.toLocaleString()}</strong> missed <span class="muted">(${totalRate}%)</span></p>
         <table><thead><tr><th>Merchant</th><th class="num">Met</th><th class="num">Missed</th><th class="num">Missed %</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join("") : `<div class="card"><p class="empty">No warehouse yet. Run <code>python seed.py</code> in the example folder.</p></div>`;

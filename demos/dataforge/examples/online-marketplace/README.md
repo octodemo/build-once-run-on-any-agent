@@ -35,7 +35,7 @@ one region is a real sequence rather than a duplicated command.
 
 | | east | west |
 | --- | --- | --- |
-| Fulfilment centre | Sydney | Perth |
+| Fulfilment centre | Sydney East | Sydney West |
 | Merchants | 12 | 6 |
 | Source tables | `merchants`, `orders`, `dispatch_attempts` | same |
 | Built entities | `Order` only | `Order` only |
