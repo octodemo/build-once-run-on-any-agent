@@ -20,8 +20,8 @@ many promises we kept or broke without pulling raw data by hand.
 
 What we need:
 
-- Two new Dispatch metrics, by merchant: dispatch promises met, and dispatch
-  promises missed
+- Two new Dispatch metrics, by merchant: promises met
+  (`total_dispatch_meet_count`) and promises missed (`total_dispatch_miss_count`)
 - Counted per day and as a running total, like the existing Order metrics, so
   the two can sit side by side on the operations dashboard
 - Built in the fulfilment domain, next to the Order metrics, for both regions:
@@ -37,7 +37,6 @@ The rules, agreed with Operations:
   deadline: still a missed promise, counted on the day the deadline passed.
 - One order is one promise, however many dispatch attempts it took. Use its
   first successful attempt.
-- Orders whose deadline has not passed yet are not counted yet.
 - Rows marked `is_deleted` are test data. Ignore them, in both tables.
 
 Things we know about the data:
