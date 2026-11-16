@@ -6,7 +6,7 @@ happens, next to the chat. Ask Copilot: **"Open the Dataforge canvas."**
 | View | What it shows | Where it comes from |
 | --- | --- | --- |
 | **The question** | The GitHub issue, the 48-hour promise, the story orders and the agreed rules | The issue file, the GitHub issue, `acceptance/online-marketplace/story.json` |
-| **The build** | Which of the four Dataforge skills Copilot is using, forge-builder's seven phases, what Dataforge learned about the business, and the files that changed | Copilot session events, forge-builder's build-state file, `dataforge.manifest.resolved.yaml`, `git` |
+| **The build** | The Dataforge diagram from the slide (issue → four skills → pull request, the manifest, the data platform, you), lit up as the agent works: the skill in use, the region being queried, the step it's on, and when it's waiting for you. A one-line "now" banner says the same in plain English. | Copilot session events (skills, tool calls, questions, approvals), forge-builder's build-state file, `dataforge.manifest.resolved.yaml`, `git` |
 | **The proof** | Story orders, expected versus the pipeline; met and missed promises by merchant in each region; the pull request's checks and the Proof Agent verdict | A private copy of each DuckDB warehouse, `gh` |
 
 ## Ground rules
