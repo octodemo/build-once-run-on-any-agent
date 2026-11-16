@@ -3,8 +3,8 @@
 
 Creates one .duckdb file per region under warehouse/:
 
-    east.duckdb   Sydney fulfilment centre
-    west.duckdb   Perth fulfilment centre
+    east.duckdb   Sydney East fulfilment centre
+    west.duckdb   Sydney West fulfilment centre
 
 Each file holds a source schema of raw marketplace data and a target schema
 with the already-built Order metric tables. Every value is generated from a
@@ -67,14 +67,14 @@ REGIONS = {
             1002: ("Bondi Board Co.", 2.4, "fast"),
             1003: ("Paddington Paper Goods", 1.2, "normal"),
             1004: ("Manly Kitchen Supply", 2.0, "normal"),
-            1005: ("Parramatta Pet Pantry", 2.8, "fast"),
+            1005: ("Randwick Pet Pantry", 2.8, "fast"),
             1006: ("Newtown Vinyl Exchange", 0.9, "normal"),
             1007: ("Glebe Garden Tools", 1.6, "slow"),
             1008: ("Coogee Coffee Gear", 1.4, "fast"),
             1009: ("Surry Hills Stationery", 1.1, "normal"),
             1010: ("Balmain Bike Parts", 0.8, "normal"),
             1011: ("Chatswood Tech Accessories", 2.2, "normal"),
-            1012: ("Katoomba Camping Supplies", 1.0, "slow"),
+            1012: ("Mosman Camping Supplies", 1.0, "slow"),
         },
     },
     "west": {
@@ -82,12 +82,12 @@ REGIONS = {
         "first_order_id": 200001,
         "first_attempt_id": 600001,
         "merchants": {
-            2001: ("Fremantle Fishing Tackle", 1.3, "normal"),
-            2002: ("Cottesloe Swimwear", 1.8, "fast"),
-            2003: ("Subiaco Sneakers", 2.1, "normal"),
-            2004: ("Margaret River Pantry", 1.5, "slow"),
-            2005: ("Rottnest Outdoor Co.", 0.9, "normal"),
-            2006: ("Swan Valley Homewares", 1.2, "fast"),
+            2001: ("Penrith Fishing Tackle", 1.3, "normal"),
+            2002: ("Parramatta Swimwear", 1.8, "fast"),
+            2003: ("Blacktown Sneakers", 2.1, "normal"),
+            2004: ("Castle Hill Pantry", 1.5, "slow"),
+            2005: ("Campbelltown Outdoor Co.", 0.9, "normal"),
+            2006: ("Liverpool Homewares", 1.2, "fast"),
         },
     },
 }

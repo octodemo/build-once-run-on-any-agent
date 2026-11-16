@@ -14,8 +14,9 @@ import os
 
 ENGINE = os.environ.get("ENGINE", "duckdb")
 
-# Region currently being processed: east (Sydney fulfilment centre) or west
-# (Perth fulfilment centre). The deploy loop sets this once per region.
+# Region currently being processed: east (Sydney East fulfilment centre) or
+# west (Sydney West fulfilment centre). The deploy loop sets this once per
+# region.
 SOURCE_ZONE = os.environ.get("SOURCE_ZONE", "east")
 
 # Suffix appended to catalog names to target a specific zone. On DuckDB every
