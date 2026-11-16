@@ -13,11 +13,12 @@ the deploy.
 
 ## Presenter note: recorded and sped up
 
-The demo is a recording, played sped up. A real build takes about 25 minutes.
-The two moments where a person decides — **3 Design** and **7 Deploy** — play
-at normal speed.
+The demo is a recording, played sped up. The last rehearsal took about 13
+minutes of agent time; quote the time of the run you actually recorded. The two
+moments where a person decides — **3 Design** and **7 Deploy** — play at
+normal speed.
 
-Say to the audience: *"This is sped up — a real build takes about 25 minutes.
+Say to the audience: *"This is sped up — the real build took about N minutes.
 It slows down at the only two moments where a person decides."*
 
 ## Before you record
@@ -79,15 +80,19 @@ fulfilment centre within 48 hours. There are two regions, each with its own
 warehouse: `east` (Sydney East) and `west` (Sydney West).
 
 The issue already states the agreed rules — met, missed, cancellations,
-retries, test orders — so the agent has nothing to guess. Walk through
-Harbour Homewares' seven orders. Two are worth pausing on:
+retries, test orders — so the agent has nothing to guess. Tell the same three
+orders as the slide "Three orders, one promise". Point to them by what
+happened, not by number:
 
-- **105** shipped, but after 68 hours — it still broke the promise, and its
-  three dispatch attempts must count as one order.
-- **106** was cancelled after its deadline — the promise was already broken.
+- **Dispatched after 29 hours:** promise met.
+- **Two failed tries, then dispatched after 68 hours:** promise missed, and it
+  counts once, not three times.
+- **Cancelled after 4 hours:** not counted at all.
 
-The rules on screen are the human-owned acceptance tests. The agent is never
-pointed at them.
+The canvas lists a few more orders (one that never ships, one cancelled too
+late, one placed yesterday, a test order). Don't walk through them; say *"the
+tests cover a few more cases like these."* The rules on screen are the
+human-owned acceptance tests. The agent is never pointed at them.
 
 **Canvas: The build.** Say: *"Before this recording started, Dataforge learned
 how this team works and wrote it down in one file."* The manifest box shows
@@ -127,9 +132,9 @@ approval**. Nothing has touched a warehouse yet.
 It deploys to `east`, and only after that succeeds, to `west`, loads the last
 30 days, and opens the pull request.
 
-**Canvas: The proof.** Harbour Homewares' numbers line up with the agreed rules
-(1 met; 2 missed on day 3, 1 on day 4), and each region shows promises met and
-missed by merchant.
+**Canvas: The proof.** The story orders show **Matches the agreed rules**: the
+pipeline's numbers equal the answers people wrote down before the build. Each
+region shows promises met and missed by merchant.
 
 ## Act 3 — Someone else checks the work
 
