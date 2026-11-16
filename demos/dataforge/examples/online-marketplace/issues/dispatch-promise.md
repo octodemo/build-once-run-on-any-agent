@@ -8,9 +8,9 @@ fork so forge-builder Phase 1 reads it the way it will in production:
       --title "Track our 48-hour dispatch promise" \
       --body-file issues/dispatch-promise.md --label metric-request
 
-It deliberately leaves business decisions open -- whether an order that ships
-late still counts as a missed promise, what happens to cancelled orders, and
-which day each result is counted on -- so the agent has to ask, not guess.
+The business rules are agreed up front and written here, so the agent has
+nothing to ask about them. They match the human-owned acceptance tests in
+acceptance/online-marketplace/story.json; the agent is never pointed at those.
 -->
 
 Operations wants to know whether we keep our dispatch promise: every order
@@ -18,19 +18,35 @@ should leave a fulfilment centre within 48 hours of being placed. Today we can
 see how many orders are placed and cancelled each day, but nobody can say how
 many promises we kept or broke without pulling raw data by hand.
 
-What we need, roughly:
+What we need:
 
-- For each merchant, how many orders met the 48-hour dispatch promise and how
-  many missed it
-- Counted per day and as a running total, like the existing order metrics, so
+- Two new Dispatch metrics, by merchant: dispatch promises met, and dispatch
+  promises missed
+- Counted per day and as a running total, like the existing Order metrics, so
   the two can sit side by side on the operations dashboard
-- Available for both regions (east and west)
-- Please add these as Dispatch metrics next to the existing Order metrics
+- Built in the fulfilment domain, next to the Order metrics, for both regions:
+  east (Sydney East) and west (Sydney West)
+
+The rules, agreed with Operations:
+
+- Met: the order was dispatched within 48 hours of being placed (at or before
+  the deadline). Count it on the day it was dispatched.
+- Missed: the order had not been dispatched when the 48 hours ran out. Count it
+  on the day the deadline passed, even if the order shipped later.
+- Cancelled before its deadline: not counted at all. Cancelled after its
+  deadline: still a missed promise, counted on the day the deadline passed.
+- One order is one promise, however many dispatch attempts it took. Use its
+  first successful attempt.
+- Orders whose deadline has not passed yet are not counted yet.
+- Rows marked `is_deleted` are test data. Ignore them, in both tables.
 
 Things we know about the data:
 
+- Orders are in `orders`: `merchant_id`, `placed_at`, `cancelled_at`.
 - Dispatch attempts are in `dispatch_attempts`. The warehouse logs every
-  attempt, so an order that failed twice before it went out has three rows.
+  attempt, so an order that failed twice before it went out has three rows. A
+  successful attempt has `outcome = 'dispatched'`; a failed one has
+  `outcome = 'failed'`.
 - All timestamps are Sydney time.
 
 Not in scope for this request: a "currently overdue" backlog view, per-region

@@ -79,4 +79,5 @@ act python3 seed.py
 
 if $APPLY; then
   say "Done. Issues and pull requests from earlier runs stay on GitHub; the canvas ignores anything created before this reset."
+  say "Next: in the Copilot app, ask Copilot to initialize dataforge (DEMO.md, Before you record)."
 fi

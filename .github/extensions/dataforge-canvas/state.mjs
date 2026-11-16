@@ -636,7 +636,7 @@ export function createState({ repoRoot, exampleDir }) {
         };
 
         const nodes = {
-            you: { state: waiting ? "waiting" : "idle", sub: waiting ? `waiting: ${clip(waiting, 70)}` : "answer questions, approve changes" },
+            you: { state: waiting ? "waiting" : "idle", sub: waiting ? `waiting: ${clip(waiting, 70)}` : "approve design, then deploy" },
             issue: {
                 state: lit("issue") ? "active" : issue || state.issue ? "done" : "idle",
                 title: issue ? `GitHub issue #${issue.number}` : state.issue ? `GitHub issue #${state.issue}` : "GitHub issue",
