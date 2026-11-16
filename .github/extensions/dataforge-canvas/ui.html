@@ -107,6 +107,75 @@
   footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 18px 14px; font-size: 12px; color: var(--muted); }
   footer button { font: inherit; border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
   @media (max-width: 760px) { .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  /* Diagram: same layout as the "What is Dataforge?" slide. */
+  :root {
+    --orange: var(--true-color-orange, #c05200);
+    --orange-soft: var(--true-color-orange-muted, #fff2e8);
+  }
+  .now { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 600; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .now .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .now.tone-active { border-color: var(--purple); background: var(--purple-soft); }
+  .now.tone-active .dot { background: var(--purple); animation: blink 1.1s ease-in-out infinite; }
+  .now.tone-waiting { border-color: var(--orange); background: var(--orange-soft); }
+  .now.tone-waiting .dot { background: var(--orange); animation: blink 1.1s ease-in-out infinite; }
+  .now.tone-done { border-color: var(--green); background: var(--green-soft); }
+  .now.tone-done .dot { background: var(--green); }
+  .now.tone-bad { border-color: var(--red); background: var(--red-soft); }
+  .now.tone-bad .dot { background: var(--red); }
+  @keyframes blink { 50% { opacity: .25; } }
+  svg.dg { width: 100%; height: auto; display: block; font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif); }
+  .dg text { fill: var(--fg); }
+  .dg .t { font-size: 15.5px; font-weight: 700; text-anchor: middle; }
+  .dg .t.mono { font-family: var(--mono); font-size: 16px; }
+  .dg .s { font-size: 12.5px; text-anchor: middle; fill: var(--muted); }
+  .dg .s.good { fill: var(--green); font-weight: 600; }
+  .dg .s.bad { fill: var(--red); font-weight: 600; }
+  .dg .lbl { font-size: 12px; fill: var(--green); }
+  .dg .boxlbl { font-size: 13px; font-weight: 700; fill: var(--purple); }
+  .dg .node .body { stroke-width: 1.5; transition: stroke-width .3s, opacity .3s; }
+  .dg .k-skill .body { fill: var(--purple-soft); stroke: var(--purple); }
+  .dg .k-box .body { fill: none; stroke: var(--purple); stroke-width: 2; }
+  .dg .k-manifest .body { fill: var(--green-soft); stroke: var(--green); }
+  .dg .k-you .body { fill: var(--orange-soft); stroke: var(--orange); }
+  .dg .k-plain .body { fill: var(--panel); stroke: var(--border); }
+  .dg .node.idle { opacity: .62; }
+  .dg .node.used, .dg .node.progress { opacity: 1; }
+  .dg .node.progress .body { stroke-width: 2.5; }
+  .dg .node.active { opacity: 1; }
+  .dg .node.active .body { stroke: var(--purple); stroke-width: 3.5; filter: drop-shadow(0 0 8px var(--purple)); animation: glow 1.3s ease-in-out infinite; }
+  .dg .node.waiting { opacity: 1; }
+  .dg .node.waiting .body { stroke: var(--orange); stroke-width: 3.5; filter: drop-shadow(0 0 8px var(--orange)); animation: glow 1.3s ease-in-out infinite; }
+  .dg .node.done { opacity: 1; }
+  .dg .badge { display: none; }
+  .dg .node.done > .badge { display: inline; }
+  .dg .badge circle { fill: var(--green); }
+  .dg .badge text { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .dg .chip rect { fill: var(--background-color-default, #fff); stroke: var(--border); stroke-width: 1.2; }
+  .dg .chip text { font-size: 11.5px; font-weight: 600; text-anchor: middle; fill: var(--muted); }
+  .dg .chip.active rect { stroke: var(--purple); stroke-width: 2.5; fill: var(--purple-soft); animation: glow 1.3s ease-in-out infinite; }
+  .dg .chip.active text { fill: var(--purple); }
+  .dg .chip.done rect { stroke: var(--green); fill: var(--green-soft); }
+  .dg .chip.done text { fill: var(--green); }
+  .dg .stepdot { fill: var(--background-color-default, #fff); stroke: var(--border); stroke-width: 1.5; }
+  .dg .stepdot.done { fill: var(--green); stroke: var(--green); }
+  .dg .stepdot.current { fill: var(--purple); stroke: var(--purple); animation: blink 1.1s ease-in-out infinite; }
+  .dg .stepdot.waiting { fill: var(--orange); stroke: var(--orange); animation: blink 1.1s ease-in-out infinite; }
+  .dg .edge { fill: none; stroke: var(--border); stroke-width: 2; }
+  .dg .edge.idle { stroke-dasharray: 3 5; }
+  .dg .edge.done { stroke: var(--muted); }
+  .dg .edge.g { stroke: var(--green); }
+  .dg .edge.g.idle { opacity: .5; }
+  .dg .edge.active { stroke: var(--purple); stroke-width: 3; stroke-dasharray: 8 6; animation: flow .8s linear infinite; }
+  .dg .edge.waiting { stroke: var(--orange); stroke-width: 3; stroke-dasharray: 8 6; animation: flow .8s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  @keyframes glow { 50% { filter: drop-shadow(0 0 2px var(--purple)); } }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .steps li { font-size: 13px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+  .steps li.done { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+  .steps li.current { border-color: var(--purple); color: var(--purple); background: var(--purple-soft); font-weight: 600; }
+  .steps li.waiting { border-color: var(--orange); color: var(--orange); background: var(--orange-soft); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .dg *, .now .dot { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -195,13 +264,101 @@
       ${story ? `<div class="card soft" style="margin-top:14px"><h3>Agreed rules (human-owned acceptance tests)</h3><ul class="plain">${story.rules.map((r) => `<li>• ${esc(r)}</li>`).join("")}</ul></div>` : ""}`;
   }
 
+  // Same geometry as the "What is Dataforge?" slide, in SVG units.
+  const G = {
+    you: { x: 270, y: 8, w: 370, h: 32 },
+    box: { x: 190, y: 58, w: 530, h: 152 },
+    builder: { x: 205, y: 84, w: 500, h: 54 },
+    init: { x: 205, y: 148, w: 158, h: 50 },
+    lint: { x: 376, y: 148, w: 158, h: 50 },
+    dbx: { x: 547, y: 148, w: 158, h: 50 },
+    issue: { x: 0, y: 100, w: 140, h: 62 },
+    pr: { x: 770, y: 62, w: 170, h: 70 },
+    platform: { x: 770, y: 142, w: 170, h: 70 },
+    manifest: { x: 330, y: 232, w: 250, h: 50 },
+  };
+  const EDGES = {
+    issue: { d: "M140 131 L188 131", g: false },
+    pr: { d: "M720 97 L768 97", g: false },
+    dbx: { d: "M705 173 L768 175", g: false },
+    you: { d: "M455 42 L455 56", g: false, both: true },
+    writes: { d: "M284 198 L341 230", g: true },
+    configures: { d: "M455 230 L455 212", g: true },
+  };
+
+  function fit(text, width, size) {
+    const max = Math.max(4, Math.floor((width - 14) / (size * (size >= 15 ? 0.55 : 0.5))));
+    const t = String(text ?? "");
+    return t.length > max ? t.slice(0, max - 1) + "…" : t;
+  }
+
+  function arrowFor(cls, green) {
+    if (cls === "active") return "url(#ah-purple)";
+    if (cls === "waiting") return "url(#ah-orange)";
+    return green ? "url(#ah-green)" : "url(#ah-grey)";
+  }
+
+  function nodeSvg(id, kind, title, lines, state, extra = "", topOverride = null) {
+    const g = G[id];
+    const cx = g.x + g.w / 2;
+    const mono = kind === "k-skill" ? " mono" : "";
+    let text = "";
+    if (lines.length === 0) {
+      text = `<text class="t${mono}" x="${cx}" y="${g.y + g.h / 2 + 6}">${esc(fit(title, g.w, 16))}</text>`;
+    } else {
+      const top = topOverride ?? g.y + g.h / 2 - (lines.length - 1) * 8 - 3;
+      text = `<text class="t${mono}" x="${cx}" y="${top}">${esc(fit(title, g.w, 16))}</text>` +
+        lines.map((l, i) => `<text class="s ${l.tone || ""}" x="${cx}" y="${top + 17 + i * 15}">${esc(fit(l.text, g.w, 12.5))}</text>`).join("");
+    }
+    return `<g class="node ${kind} ${state}" data-node="${id}">
+      <rect class="body" x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="10"/>
+      ${text}${extra}
+      <g class="badge"><circle cx="${g.x + g.w - 4}" cy="${g.y + 4}" r="9"/><text x="${g.x + g.w - 4}" y="${g.y + 8}">✓</text></g>
+    </g>`;
+  }
+
+  function diagramSvg(d, phases) {
+    const n = d.nodes;
+    const edges = Object.entries(EDGES).map(([id, e]) => {
+      const st = d.edges[id] || "idle";
+      return `<path class="edge ${e.g ? "g" : ""} ${st}" d="${e.d}" marker-end="${arrowFor(st, e.g)}" ${e.both ? `marker-start="${arrowFor(st, e.g)}"` : ""}/>`;
+    }).join("");
+    const b = G.builder;
+    const dots = (phases || []).map((p, i) => `<circle class="stepdot ${p.status}" cx="${b.x + b.w / 2 - 54 + i * 18}" cy="${b.y + b.h - 8}" r="4.5"><title>${esc(p.n + ". " + p.name)}</title></circle>`).join("");
+    const pg = G.platform;
+    const chips = (n.platform.zones || []).map((z, i, all) => {
+      const w = 62, gap = 8, total = all.length * w + (all.length - 1) * gap;
+      const x = pg.x + pg.w / 2 - total / 2 + i * (w + gap);
+      return `<g class="chip ${z.state}"><rect x="${x}" y="${pg.y + pg.h - 26}" width="${w}" height="19" rx="9"/><text x="${x + w / 2}" y="${pg.y + pg.h - 12.5}">${esc(z.id)}</text></g>`;
+    }).join("");
+    const bx = G.box;
+    return `<svg class="dg" viewBox="-4 -4 950 292" role="img" aria-label="Dataforge diagram">
+      <defs>
+        ${["grey:var(--muted)", "purple:var(--purple)", "orange:var(--orange)", "green:var(--green)"].map((c) => {
+          const [name, color] = c.split(":");
+          return `<marker id="ah-${name}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:${color}"/></marker>`;
+        }).join("")}
+      </defs>
+      ${edges}
+      <g class="node k-box ${n.box.state}"><rect class="body" x="${bx.x}" y="${bx.y}" width="${bx.w}" height="${bx.h}" rx="14"/>
+        <text class="boxlbl" x="${bx.x + 15}" y="${bx.y + 18}">Dataforge · four agent skills</text></g>
+      ${nodeSvg("you", "k-you", "You · " + n.you.sub, [], n.you.state)}
+      ${nodeSvg("builder", "k-skill", "forge-builder", [{ text: n.builder.sub }], n.builder.state, dots, G.builder.y + 19)}
+      ${nodeSvg("init", "k-skill", "forge-init", [{ text: n.init.sub }], n.init.state)}
+      ${nodeSvg("lint", "k-skill", "forge-lint" + (n.lint.uses ? ` ×${n.lint.uses}` : ""), [{ text: n.lint.sub }], n.lint.state)}
+      ${nodeSvg("dbx", "k-skill", "forge-dbx" + (n.dbx.uses ? ` ×${n.dbx.uses}` : ""), [{ text: n.dbx.sub }], n.dbx.state)}
+      ${nodeSvg("issue", "k-plain", n.issue.title, [{ text: n.issue.sub }], n.issue.state)}
+      ${nodeSvg("pr", "k-plain", n.pr.title, n.pr.lines, n.pr.state)}
+      ${nodeSvg("platform", "k-plain", "Data platform", [{ text: n.platform.sub }], n.platform.state, chips, G.platform.y + 20)}
+      ${nodeSvg("manifest", "k-manifest", "Manifest", [{ text: n.manifest.sub }], n.manifest.state)}
+      <text class="lbl" x="243" y="224">writes</text>
+      <text class="lbl" x="463" y="224">configures every skill</text>
+    </svg>`;
+  }
+
   function renderBuild(s) {
     const b = s.build;
-    const skills = b.skills.map((k) => `<div class="skill ${k.active ? "active" : ""} ${k.uses ? "used" : ""}">
-        <div class="name">${esc(k.name)}</div><div class="muted">${esc(k.role)}</div>
-        <div class="muted" style="font-size:12px;margin-top:4px">${k.uses ? `used ${k.uses}× · ${ago(new Date(k.last).toISOString())}` : "not used yet"}</div></div>`).join("");
-    const st = b.state;
-    const phases = b.phases.map((p) => `<li class="${p.status}"><span class="dot">${p.status === "done" ? "✓" : p.n}</span><span class="label">${esc(p.name)}</span>${p.status === "waiting" ? '<span class="badge wait">waiting for a person</span>' : p.status === "current" ? '<span class="badge other">in progress</span>' : ""}</li>`).join("");
+    const d = b.diagram;
     const m = b.manifest;
     let facts = `<p class="empty">No resolved manifest yet. Ask Copilot to initialize dataforge.</p>`;
     if (m.exists && m.facts) {
@@ -210,34 +367,24 @@
         <dt>Regions</dt><dd class="zones">${f.deploymentOrder.map((z) => `<span class="badge other">${esc(z)}</span>`).join('<span class="arrow">→</span>')}</dd>
         <dt>Source</dt><dd><code>${esc(f.sources.join(", "))}</code></dd>
         <dt>Metric store</dt><dd><code>${esc(f.targets.join(", "))}</code></dd>
-        <dt>Entities</dt><dd>${f.domains.map((d) => `${esc(d.name)}: ${d.entities.map((e) => `<code>${esc(e)}</code>`).join(" ")}`).join("; ")}</dd>
+        <dt>Entities</dt><dd>${f.domains.map((x) => `${esc(x.name)}: ${x.entities.map((e) => `<code>${esc(e)}</code>`).join(" ")}`).join("; ")}</dd>
         <dt>Grain</dt><dd>${f.grains.map((g) => `${esc(g.name)} (<code>${esc(g.columns.join(", "))}</code>)`).join(", ")}</dd>
         ${f.cadences.length ? `<dt>Cadences</dt><dd>${esc(f.cadences.join(" and "))}</dd>` : ""}
         <dt>Naming</dt><dd><code>${esc(f.metricPattern)}</code></dd>
         <dt>Verbs</dt><dd>${f.verbs.map((v) => v.fromManifest ? `<span class="new-word">${esc(v.verb)}</span>` : esc(v.verb)).join(", ")} <span class="muted">(purple: added in the manifest)</span></dd>
         <dt>Won't fake</dt><dd>${f.unsupported.map((u) => esc(u)).join("<br>") || "—"}</dd>
       </dl>`;
-    } else if (m.exists) {
-      facts = `<p class="muted">Resolved manifest found; showing it as text.</p>`;
     }
     const raw = m.exists ? `<details style="margin-top:10px"><summary>Open ${esc(m.path)}${m.generated ? ` · generated ${esc(m.generated)}` : ""}</summary><pre class="yaml">${esc(m.raw).replace(VERB_WORDS, "<mark>$1</mark>")}</pre></details>` : "";
-    const deploy = st.found && Object.keys(st.deployment || {}).length ? `<div class="zones" style="margin-top:10px"><span class="muted">Deploy:</span>${Object.entries(st.deployment).map(([z, v]) => `<span class="badge ${v === "success" ? "ok" : v === "failed" ? "bad" : "other"}">${esc(z)} · ${esc(v)}</span>`).join('<span class="arrow">→</span>')}</div>` : "";
-    const metrics = st.found && st.metrics.length ? `<div style="margin-top:10px">${st.metrics.map((x) => `<code>${esc(x.name)}</code> <span class="badge other">${esc(x.status)}</span>`).join("<br>")}</div>` : "";
-    const files = b.files.length ? `<ul class="plain files">${b.files.map((f) => `<li><span class="badge ${f.change === "added" ? "ok" : "other"}">${f.change}</span><span>${esc(f.path)}</span></li>`).join("")}</ul>` : `<p class="empty">No changes in the example project yet.</p>`;
+    const steps = `<ul class="steps">${b.phases.map((p) => `<li class="${p.status}">${p.status === "done" ? "✓" : p.n} ${esc(p.name)}</li>`).join("")}</ul>`;
     const activity = b.activity.length ? `<ul class="plain activity">${b.activity.map((a) => `<li><span class="muted">${ago(a.at)}</span> ${esc(a.label)}</li>`).join("")}</ul>` : `<p class="empty">Skill and tool activity from this Copilot session appears here.</p>`;
+    const files = b.files.length ? `<details style="margin-top:10px"><summary>Files changed (${b.files.length})</summary><ul class="plain files">${b.files.map((f) => `<li><span class="badge ${f.change === "added" ? "ok" : "other"}">${f.change}</span><span>${esc(f.path)}</span></li>`).join("")}</ul></details>` : "";
     document.getElementById("build").innerHTML = `
-      <div class="card"><h3>Four Dataforge skills · unchanged, loaded from the plugin</h3><div class="skills">${skills}</div></div>
+      <div class="now tone-${d.now.tone}"><span class="dot"></span><span>${esc(d.now.text)}</span></div>
+      <div class="card">${diagramSvg(d, b.phases)}${steps}</div>
       <div class="grid two" style="margin-top:14px">
-        <div class="card"><h3>forge-builder phases ${st.found ? `· <span class="muted" style="text-transform:none">${esc(st.buildId)}</span>` : ""}</h3>
-          ${st.found ? "" : '<p class="empty" style="margin-top:0">Waiting for forge-builder to write its build state.</p>'}
-          ${st.blocking ? `<div class="callout wait" style="margin-bottom:10px"><strong>Waiting for a person:</strong> ${esc(typeof st.blocking === "string" ? st.blocking : JSON.stringify(st.blocking))}</div>` : ""}
-          <ul class="phases">${phases}</ul>${metrics}${deploy}
-        </div>
         <div class="card"><h3>What Dataforge learned · the business lives in one file</h3>${facts}${raw}</div>
-      </div>
-      <div class="grid two" style="margin-top:14px">
-        <div class="card"><h3>Files changed in the project</h3>${files}</div>
-        <div class="card"><h3>Activity</h3>${activity}</div>
+        <div class="card"><h3>Activity</h3>${activity}${files}</div>
       </div>`;
   }
 

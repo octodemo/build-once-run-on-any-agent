@@ -65,7 +65,7 @@ const canvas = createCanvas({
     id: "dataforge",
     displayName: "Dataforge",
     description:
-        "Live view of a Dataforge metric build: the business question, the four skills and seven phases, and the proof (results, tests and review).",
+        "Live Dataforge diagram that lights up as the agent works, plus the business question and the proof (results, tests and review).",
     inputSchema: {
         type: "object",
         properties: {
@@ -131,3 +131,16 @@ session.on("skill.invoked", (event) => {
 session.on("tool.execution_start", (event) => {
     for (const state of states.values()) state.recordTool(event.data);
 });
+for (const type of [
+    "assistant.turn_start",
+    "session.idle",
+    "user_input.requested",
+    "user_input.completed",
+    "permission.requested",
+    "permission.completed",
+    "tool.execution_complete",
+]) {
+    session.on(type, (event) => {
+        for (const state of states.values()) state.recordEvent(type, event.data);
+    });
+}

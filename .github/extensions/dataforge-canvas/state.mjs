@@ -32,6 +32,22 @@ export const SKILLS = [
 ];
 
 const ACTIVE_WINDOW_MS = 90_000;
+// While the agent is working, a node stays lit for this long after its last signal.
+const LIT_MS = 45_000;
+const SKILL_NODE = { "forge-init": "init", "forge-dbx": "dbx", "forge-lint": "lint", "forge-builder": "builder" };
+
+function clip(text, max) {
+    const value = String(text ?? "").replace(/\s+/g, " ").trim();
+    return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+// Regions a DuckDB command touches: warehouse/<zone>.duckdb, or a `for zone in a b` loop.
+function zonesIn(cmd) {
+    const found = new Set([...cmd.matchAll(/warehouse\/([A-Za-z0-9_-]+)\.duckdb/g)].map((m) => m[1]));
+    const loop = cmd.match(/for\s+\w+\s+in\s+([A-Za-z0-9_ -]+?)\s*;/);
+    if (loop && /\.duckdb/.test(cmd)) for (const zone of loop[1].split(/\s+/)) if (zone) found.add(zone);
+    return [...found];
+}
 const WAREHOUSE_TTL_MS = 5_000;
 const GITHUB_TTL_MS = 15_000;
 const DUCKDB_ENV = { ...process.env, DUCKDB_AGENT_MODE: "0" };
@@ -120,6 +136,11 @@ export function createState({ repoRoot, exampleDir }) {
     const activity = [];
     const startedAt = Date.now() - 60_000;
     const requestedView = { name: null, seq: 0 };
+    // Live signals from the Copilot session, keyed by diagram node or edge.
+    const signals = new Map();
+    // Questions and approvals the agent is waiting on, keyed by request id.
+    const pending = new Map();
+    let busy = false;
     const cache = {
         manifest: { at: 0, value: null },
         warehouse: { at: 0, value: null },
@@ -131,12 +152,18 @@ export function createState({ repoRoot, exampleDir }) {
         activity.length = Math.min(activity.length, 40);
     }
 
+    function signal(...keys) {
+        const at = Date.now();
+        for (const key of keys) signals.set(key, at);
+    }
+
     function touchSkill(name, how) {
         const entry = skillUse.get(name);
         if (!entry) return;
         entry.count += 1;
         entry.last = Date.now();
         entry.source = how;
+        signal(SKILL_NODE[name]);
     }
 
     // Called for "skill.invoked" session events.
@@ -149,26 +176,102 @@ export function createState({ repoRoot, exampleDir }) {
     // Called for "tool.execution_start" session events. Only short labels are
     // kept; full commands and file contents are never stored.
     function recordTool(data = {}) {
-        const args = data.arguments || {};
+        busy = true;
+        const name = String(data.toolName || "");
+        const args = data.arguments ?? {};
         const text = typeof args === "string" ? args : JSON.stringify(args);
+        const cmd = typeof args.command === "string" ? args.command : "";
+        const writes = /^(apply_patch|edit|create|write|str_replace|multi_edit)/.test(name);
+        if (name === "skill" && skillUse.has(args.skill)) {
+            touchSkill(args.skill, "skill");
+            return;
+        }
+        if (name === "ask_user") {
+            pending.set(`tool:${data.toolCallId || "ask"}`, { text: String(args.question || "a question"), at: Date.now() });
+            signal("you", "e:you");
+            note(`Copilot asked you: ${clip(args.question, 80)}`, "you");
+            return;
+        }
         const read = text.match(/(forge-(?:init|dbx|lint|builder))\/(?:SKILL\.md|references\/([\w./-]+))/);
         if (read) {
             touchSkill(read[1], "read");
             note(`${read[1]}: read ${read[2] ? `references/${basename(read[2])}` : "SKILL.md"}`);
             return;
         }
-        const cmd = typeof args.command === "string" ? args.command : "";
-        const zone = cmd.match(/warehouse\/(\w+)\.duckdb/);
+        if (/dataforge\.manifest\.resolved\.yaml/.test(text) && !/\bduckdb\b/.test(cmd)) {
+            if (writes || />\s*\S*dataforge\.manifest\.resolved\.yaml/.test(cmd)) {
+                touchSkill("forge-init", "write");
+                signal("manifest", "e:writes", "w:manifest");
+                note("forge-init: wrote the manifest");
+            } else {
+                signal("manifest", "e:configures", "r:manifest");
+                note("Read the manifest");
+            }
+            return;
+        }
         if (/\bduckdb\b/.test(cmd)) {
+            const zones = zonesIn(cmd);
             touchSkill("forge-dbx", "query");
-            note(`forge-dbx: DuckDB ${/INSERT|CREATE|DROP|ALTER/i.test(cmd) ? "write" : "query"}${zone ? ` on ${zone[1]}` : ""}`);
-        } else if (/\bgh (issue|pr|label)\b/.test(cmd)) {
-            note(`GitHub: gh ${cmd.match(/\bgh (issue|pr|label) (\w+)/)?.slice(1).join(" ") || "command"}`);
-        } else if (/verify\.py/.test(cmd)) {
+            signal("platform", "e:dbx", ...zones.map((z) => `zone:${z}`));
+            lastZones = zones;
+            note(`forge-dbx: DuckDB ${/\b(INSERT|CREATE|DROP|ALTER|DELETE)\b/i.test(cmd) ? "write" : "query"}${zones.length ? ` on ${zones.join(" and ")}` : ""}`);
+            return;
+        }
+        if (/\bgh issue\b/.test(cmd)) {
+            signal("issue", "e:issue");
+            note(`GitHub: gh issue ${cmd.match(/\bgh issue (\w+)/)?.[1] || ""}`.trim());
+            return;
+        }
+        if (/\bgh pr\b/.test(cmd) || /\bgit push\b/.test(cmd)) {
+            signal("pr", "e:pr");
+            note(/\bgit push\b/.test(cmd) ? "Pushed the branch" : `GitHub: gh pr ${cmd.match(/\bgh pr (\w+)/)?.[1] || ""}`.trim());
+            return;
+        }
+        if (/\bgh label\b/.test(cmd)) {
+            note("GitHub: gh label");
+            return;
+        }
+        if (/verify\.py/.test(cmd)) {
             touchSkill("forge-builder", "checkpoint");
             note(`forge-builder: checkpoint check (${cmd.match(/verify\.py\s+([\w-]+)/)?.[1] || "verify"})`);
+            return;
+        }
+        if (/_runner\.py/.test(cmd)) {
+            signal("builder");
+            note("forge-builder: rendered the pipeline SQL");
+            return;
+        }
+        if (writes && /marketplace_metric_store\//.test(text)) {
+            const path = text.match(/marketplace_metric_store\/[\w./-]+/)?.[0];
+            signal("builder");
+            note(`forge-builder: wrote ${path ? basename(path) : "a pipeline file"}`);
         }
     }
+
+    // Called for other session events: questions, approvals and turns.
+    function recordEvent(type, data = {}) {
+        if (type === "assistant.turn_start") {
+            busy = true;
+        } else if (type === "session.idle") {
+            busy = false;
+        } else if (type === "user_input.requested") {
+            pending.set(`input:${data.requestId}`, { text: String(data.question || "a question"), at: Date.now() });
+            signal("you", "e:you");
+        } else if (type === "user_input.completed") {
+            for (const key of [...pending.keys()]) if (key.startsWith("input:") || key.startsWith("tool:")) pending.delete(key);
+            note("You answered", "you");
+        } else if (type === "permission.requested") {
+            const kind = data.permissionRequest?.kind;
+            pending.set(`perm:${data.requestId}`, { text: kind ? `approve a ${kind} request` : "approve a request", at: Date.now() });
+            signal("you", "e:you");
+        } else if (type === "permission.completed") {
+            pending.delete(`perm:${data.requestId}`);
+        } else if (type === "tool.execution_complete") {
+            pending.delete(`tool:${data.toolCallId}`);
+        }
+    }
+
+    let lastZones = [];
 
     function requestView(name) {
         requestedView.name = name;
@@ -509,6 +612,109 @@ export function createState({ repoRoot, exampleDir }) {
         return value;
     }
 
+    function diagram({ state, steps, manifestInfo, warehouseInfo, githubInfo }) {
+        const now = Date.now();
+        const lit = (key) => busy && signals.has(key) && now - signals.get(key) < LIT_MS;
+        const uses = (name) => skillUse.get(name)?.count || 0;
+        const waits = [...pending.values()].sort((a, b) => a.at - b.at);
+        const waiting = waits.length ? waits[waits.length - 1].text : state.found && state.blocking ? String(state.blocking) : null;
+        const building = state.found && ["intake_started", "in_progress", "blocked"].includes(state.status);
+        const completed = state.found && state.status === "completed";
+        const current = steps.find((p) => p.status === "current" || p.status === "waiting");
+        const issue = githubInfo.issue;
+        const pr = githubInfo.pr;
+        const tests = pr?.checks.find((c) => /acceptance/i.test(`${c.name} ${c.workflow}`))?.bucket || null;
+        const verdict = pr?.proofAgent?.verdict || null;
+        const facts = manifestInfo.exists ? manifestInfo.facts : null;
+        const zoneIds = Object.keys(warehouseInfo.zones || {});
+        const deployed = (zone) =>
+            (state.found && state.deployment?.[zone] === "success") || (warehouseInfo.zones?.[zone]?.newEntities?.length || 0) > 0;
+        const helper = (name, idle) => {
+            const node = SKILL_NODE[name];
+            const count = uses(name);
+            return { state: lit(node) ? "active" : count ? "used" : "idle", sub: idle, uses: count };
+        };
+
+        const nodes = {
+            you: { state: waiting ? "waiting" : "idle", sub: waiting ? `waiting: ${clip(waiting, 70)}` : "answer questions, approve changes" },
+            issue: {
+                state: lit("issue") ? "active" : issue || state.issue ? "done" : "idle",
+                title: issue ? `GitHub issue #${issue.number}` : state.issue ? `GitHub issue #${state.issue}` : "GitHub issue",
+                sub: issue ? clip(issue.title, 24) : "a business request",
+            },
+            builder: {
+                state: state.found && state.blocking ? "waiting" : lit("builder") || (busy && building) ? "active" : completed ? "done" : building ? "progress" : "idle",
+                sub: current ? `Step ${current.n} of 7 · ${current.name}` : completed ? "all seven steps done" : "runs the job in seven steps",
+            },
+            init: {
+                state: lit("init") ? "active" : manifestInfo.exists ? "done" : "idle",
+                sub: manifestInfo.exists ? "learned your project" : "learns your project",
+            },
+            lint: helper("forge-lint", "applies your standards"),
+            dbx: helper("forge-dbx", "runs every query"),
+            platform: {
+                state: lit("platform") ? "active" : zoneIds.some(deployed) ? "done" : "idle",
+                sub: facts?.engine === "duckdb" ? "DuckDB" : "Databricks or DuckDB",
+                zones: zoneIds.map((zone) => ({ id: zone, state: lit(`zone:${zone}`) ? "active" : deployed(zone) ? "done" : "idle" })),
+            },
+            manifest: {
+                state: lit("manifest") ? "active" : manifestInfo.exists ? "done" : "idle",
+                sub: facts
+                    ? clip([facts.deploymentOrder.join(" → "), facts.grains.map((g) => g.name).join(", "), facts.verbs.filter((v) => v.fromManifest).map((v) => v.verb).join(", ")].filter(Boolean).join(" · "), 40)
+                    : "your business, in one file",
+            },
+            pr: {
+                state: lit("pr") ? "active" : pr ? (tests === "pending" ? "progress" : "done") : "idle",
+                title: pr ? `Pull request #${pr.number}` : "Pull request",
+                lines: pr
+                    ? [
+                          { text: `tests: ${tests || "not run"}`, tone: tests === "pass" ? "good" : tests === "fail" ? "bad" : "muted" },
+                          { text: `Proof Agent: ${verdict || "not yet"}`, tone: verdict === "PASS" ? "good" : verdict === "FAIL" ? "bad" : "muted" },
+                      ]
+                    : [{ text: "code + tests, for review", tone: "muted" }],
+            },
+        };
+        const skillActive = ["builder", "init", "lint", "dbx"].some((n) => nodes[n].state === "active");
+        nodes.box = { state: skillActive ? "active" : nodes.builder.state === "waiting" ? "waiting" : building ? "progress" : completed ? "done" : "idle" };
+
+        const edge = (key, done) => (lit(key) ? "active" : done ? "done" : "idle");
+        const edges = {
+            issue: edge("e:issue", nodes.issue.state === "done" && (building || completed)),
+            you: waiting ? "waiting" : "idle",
+            pr: edge("e:pr", Boolean(pr)),
+            dbx: edge("e:dbx", nodes.platform.state === "done"),
+            writes: edge("e:writes", manifestInfo.exists),
+            configures: edge("e:configures", manifestInfo.exists),
+        };
+
+        // One plain-English sentence for what is happening now.
+        let now_ = null;
+        if (waiting) {
+            now_ = { tone: "waiting", text: `Waiting for you: ${clip(waiting, 110)}` };
+        } else {
+            const keys = ["init", "lint", "dbx", "builder", "manifest", "issue", "pr"].filter((k) => lit(k));
+            const latest = keys.sort((a, b) => signals.get(b) - signals.get(a))[0];
+            const step = current ? `forge-builder · step ${current.n} of 7: ${current.name}` : "forge-builder is working";
+            const sentences = {
+                init: "forge-init is learning the project",
+                lint: "forge-lint is applying the team's standards",
+                dbx: `forge-dbx is querying ${lastZones.length ? `the ${lastZones.join(" and ")} warehouse${lastZones.length > 1 ? "s" : ""}` : "the warehouse"}`,
+                builder: step,
+                manifest: signals.get("w:manifest") >= (signals.get("r:manifest") || 0) ? "forge-init is writing the manifest: the business, in one file" : "Reading the manifest: the business, in one file",
+                issue: issue ? `Reading GitHub issue #${issue.number}` : "Working with the GitHub issue",
+                pr: "Opening the pull request",
+            };
+            if (latest) now_ = { tone: "active", text: sentences[latest] };
+            else if (building) now_ = { tone: "active", text: current ? `forge-builder · step ${current.n} of 7: ${current.name}` : "forge-builder is working" };
+            else if (pr) now_ = { tone: tests === "fail" ? "bad" : "done", text: `Pull request #${pr.number} · tests ${tests || "not run"} · Proof Agent: ${verdict || "not yet"} · a person decides` };
+            else if (completed) now_ = { tone: "done", text: "Build complete" };
+            else if (manifestInfo.exists) now_ = { tone: "idle", text: "Dataforge has learned the project. Next: build the metrics in the issue." };
+            else if (warehouseInfo.built) now_ = { tone: "idle", text: "Ready. Ask Copilot to initialize dataforge." };
+            else now_ = { tone: "idle", text: "Run ./reset.sh --yes to build the warehouses." };
+        }
+        return { now: now_, nodes, edges };
+    }
+
     async function snapshot({ force = false } = {}) {
         const storyRaw = safeRead(storyPath);
         const story = storyRaw ? JSON.parse(storyRaw) : null;
@@ -522,6 +728,7 @@ export function createState({ repoRoot, exampleDir }) {
             github(force, state, story),
         ]);
         const now = Date.now();
+        const steps = phases(state);
         const skills = SKILLS.map((s) => {
             const use = skillUse.get(s.name);
             return { ...s, uses: use.count, last: use.last || null, active: use.last > 0 && now - use.last < ACTIVE_WINDOW_MS, how: use.source };
@@ -531,7 +738,15 @@ export function createState({ repoRoot, exampleDir }) {
             project: { name: basename(exampleDir), path: relative(repoRoot, exampleDir) },
             requestedView: { ...requestedView },
             question: { issue: { body: issueBody(issueMd), live: githubInfo.issue }, story },
-            build: { skills, manifest: manifestInfo, state, phases: phases(state), files, activity: activity.slice(0, 12) },
+            build: {
+                skills,
+                manifest: manifestInfo,
+                state,
+                phases: steps,
+                diagram: diagram({ state, steps, manifestInfo, warehouseInfo, githubInfo }),
+                files,
+                activity: activity.slice(0, 12),
+            },
             proof: { warehouse: warehouseInfo, github: githubInfo, story },
         };
     }
@@ -541,6 +756,7 @@ export function createState({ repoRoot, exampleDir }) {
         const st = s.build.state;
         const current = s.build.phases.find((p) => p.status === "current" || p.status === "waiting");
         const lines = [
+            `Now: ${s.build.diagram.now.text}.`,
             st.found
                 ? `Build ${st.buildId}: ${st.status}. ${current ? `Phase ${current.n} of 7 (${current.name})${current.status === "waiting" ? ", waiting for a person" : ""}.` : "All phases complete."}`
                 : "No forge-builder build state yet.",
@@ -553,5 +769,5 @@ export function createState({ repoRoot, exampleDir }) {
         return lines.join("\n");
     }
 
-    return { snapshot, summary, recordSkill, recordTool, requestView };
+    return { snapshot, summary, recordSkill, recordTool, recordEvent, requestView };
 }
