@@ -7,10 +7,20 @@ human-owned acceptance tests and an advisory Proof Agent review.
 
 The thing worth watching is not that an agent wrote SQL. It is that four
 skills with no knowledge of this business produce marketplace-correct code,
-because everything they need to know lives in one manifest — and that the
-agent asks about the business rules instead of guessing them.
+because everything they need to know lives in one manifest and one issue —
+and that a person makes exactly two decisions: approve the design, and approve
+the deploy.
 
-## Before you start
+## Presenter note: recorded and sped up
+
+The demo is a recording, played sped up. A real build takes about 25 minutes.
+The two moments where a person decides — **3 Design** and **7 Deploy** — play
+at normal speed.
+
+Say to the audience: *"This is sped up — a real build takes about 25 minutes.
+It slows down at the only two moments where a person decides."*
+
+## Before you record
 
 You need the GitHub Copilot app, the GitHub CLI signed in with access to
 `octodemo/build-once-run-on-any-agent`, the DuckDB CLI, and Python 3.9+.
@@ -31,35 +41,15 @@ this repository only; it appears under **Customize → Installed** with its four
 skills. (To try it without installing anything, use Copilot CLI with
 `copilot --plugin-dir demos/dataforge`.)
 
-Then ask Copilot:
+In a new session, ask Copilot:
 
 > Open the Dataforge canvas.
 
-## Act 1 — The question
-
-**Canvas: The question.** The marketplace promises that every order leaves a
-fulfilment centre within 48 hours. There are two regions, each with its own
-warehouse: `east` (Sydney East) and `west` (Sydney West).
-
-Walk through Harbour Homewares' seven orders. Two are worth pausing on:
-
-- **105** shipped, but after 68 hours — it still broke the promise, and its
-  three dispatch attempts must count as one order.
-- **106** was cancelled after its deadline — the promise was already broken.
-
-The rules on screen are the human-owned acceptance tests. The agent is never
-pointed at them.
-
-## Act 2 — Cold start
-
-**Canvas: The build.**
-
-Say: *"Before it writes any code, Dataforge learns how this team works and
-writes it down in one file."*
-
 > Initialize dataforge for the project in demos/dataforge/examples/online-marketplace.
 
-`forge-init` reads a few lines of seed manifest, then discovers the rest:
+`forge-init` reads the few lines of seed manifest and discovers the rest. It
+ends by showing what it learned and asking you to check it — that check is
+part of setup, not the recording.
 
 | Discovered from | What it learns |
 | --- | --- |
@@ -69,14 +59,10 @@ writes it down in one file."*
 | `Schema/*.sql` file names | one grain (`merchant`), two cadences (daily, cumulative) |
 | `Code/*.py` | the naming grammar `total_{entity}_{verb}_count` |
 
-The canvas shows `meet` and `miss` in purple: those verbs came from the
-manifest, because the business word has to come from somewhere other than the
-skills. Scheduling is marked *unsupported*: DuckDB has no scheduler, and the
-skill says so instead of inventing one.
+The seed adds what can't be discovered: the verbs `meet` and `miss`, and that
+the new Dispatch entity belongs in `fulfilment`.
 
-## Act 3 — Intake
-
-From the repository root, open the issue:
+Then, from the repository root, open the issue:
 
 ```bash
 gh issue create --title "Track our 48-hour dispatch promise" \
@@ -84,52 +70,68 @@ gh issue create --title "Track our 48-hour dispatch promise" \
   --label metric-request
 ```
 
-> Build the metrics in issue #N.
+Start recording.
 
-The issue is vague on purpose. Phase 1 proposes defaults from the manifest and
-asks you to confirm the rest. Answer with the agreed rules, in whatever order
-it asks:
+## Act 1 — The question
 
-| If it asks about | Answer |
-| --- | --- |
-| Grain, cadences, regions | Merchant only; daily and cumulative; both regions. |
-| When a promise is met | Dispatched within 48 hours of being placed. Count it on the day it was dispatched. |
-| Late dispatches | Still a missed promise. Count it on the day the 48 hours ran out. |
-| Cancellations | Cancelled before the deadline: don't count it. Cancelled after the deadline: it already missed. |
-| Retries | One order is one promise, however many dispatch attempts it took. |
-| Deleted rows | Exclude them — they are test orders. |
+**Canvas: The question.** The marketplace promises that every order leaves a
+fulfilment centre within 48 hours. There are two regions, each with its own
+warehouse: `east` (Sydney East) and `west` (Sydney West).
 
-Each answer is a checkpoint. The canvas shows the phase waiting for a person.
+The issue already states the agreed rules — met, missed, cancellations,
+retries, test orders — so the agent has nothing to guess. Walk through
+Harbour Homewares' seven orders. Two are worth pausing on:
 
-## Act 4 — Discovery, design and code
+- **105** shipped, but after 68 hours — it still broke the promise, and its
+  three dispatch attempts must count as one order.
+- **106** was cancelled after its deadline — the promise was already broken.
 
-Phases 2 to 5. Every query goes through `forge-dbx`, which refuses row-level
-`SELECT *` even against synthetic data on a laptop. `forge-lint` names the
-metrics: `total_dispatch_meet_count` and `total_dispatch_miss_count`.
+The rules on screen are the human-owned acceptance tests. The agent is never
+pointed at them.
 
-Watch the join decision: `dispatch_attempts` has several rows for some orders,
-so it has to be reduced to one row per order before it meets `orders`.
+**Canvas: The build.** Say: *"Before this recording started, Dataforge learned
+how this team works and wrote it down in one file."* The manifest box shows
+it; `meet` and `miss` came from the manifest, because the business word has to
+come from somewhere other than the skills.
 
-The new `Dispatch/` files appear in the canvas. The runners only print SQL;
-nothing touches a warehouse until `forge-dbx` runs it:
+## Act 2 — The build
 
-```bash
-python3 marketplace_metric_store/common/daily_runner.py \
-  marketplace_metric_store/fulfilment/Dispatch/Code/Dispatch_Metrics_Snapshot_Daily.py
-```
+> Build the metrics in issue #N. Run the full pipeline with no questions, but stop for my approval at Phase 3 Design and at Phase 7 Deploy.
 
-## Act 5 — Tests, approval and deployment
+**1 Scope and 2 Discover** run without stopping (sped up). Every query goes
+through `forge-dbx`, which refuses row-level `SELECT *` even against synthetic
+data on a laptop. Discovery checks every value in the issue against the data
+and shows its report.
 
-Phase 6 writes and runs the agent's own tests. Phase 7 prints the table
-definitions and **stops until you approve** — say yes on stage; that pause is
-the point. Then it deploys to `east`, and only after that succeeds, to `west`,
-and loads the last 30 days.
+### First decision: 3 Design (normal speed)
+
+Dataforge shows the metric design and **stops for approval**: the two metrics,
+`total_dispatch_meet_count` and `total_dispatch_miss_count`, which day each is
+counted on, and its proof-of-concept counts in both regions. Watch the join
+decision: `dispatch_attempts` has several rows for some orders, so it is
+reduced to one row per order before it meets `orders`.
+
+> Approved.
+
+**4 Schema, 5 Pipelines and 6 Test** run without stopping (sped up). The new
+`Dispatch/` files appear in the canvas, and the agent runs its own tests.
+
+### Second decision: 7 Deploy (normal speed)
+
+Dataforge shows every table definition in full, the order it will deploy in,
+and its plan to push a branch and open a pull request — then **stops for
+approval**. Nothing has touched a warehouse yet.
+
+> Approve schema changes. Deploy to Sydney East, then Sydney West, then push the branch and open the pull request.
+
+It deploys to `east`, and only after that succeeds, to `west`, loads the last
+30 days, and opens the pull request.
 
 **Canvas: The proof.** Harbour Homewares' numbers line up with the agreed rules
 (1 met; 2 missed on day 3, 1 on day 4), and each region shows promises met and
 missed by merchant.
 
-## Act 6 — Someone else checks the work
+## Act 3 — Someone else checks the work
 
 The pull request triggers two checks:
 
@@ -151,6 +153,12 @@ merge and raise a follow-up to validate `SNAPSHOT_DATE` in the shared runner.
 That is the point of the slide: the tests prove the rules, the AI reviewer
 raises concerns, and a person weighs them.
 
+The two-decision flow was rehearsed from a clean reset with issue #10:
+Dataforge stopped exactly twice, at 3 Design and 7 Deploy, and opened
+[pull request #11](https://github.com/octodemo/build-once-run-on-any-agent/pull/11)
+(closed; rehearsal only). The acceptance tests passed; Proof Agent returned
+FAIL on the same f-string point.
+
 Dataforge also manages the issue: once the pull request is open, it comments on
 the issue and may close it as delivered.
 
@@ -167,7 +175,8 @@ the issue and may close it as delivered.
 | Symptom | What to do |
 | --- | --- |
 | No `forge-*` skills | Check **Customize → Installed** for Dataforge, or start a new session. |
-| Dataforge doesn't stop to ask | Answer anyway: when it lists its assumptions, confirm or correct them from the table in Act 3. |
+| It goes past the design without stopping | Say: *"Stop. Show me the Phase 3 design before you write any code."* |
+| It stops anywhere else | If it's a business question, say: *"Use the rules in the issue and continue."* If the data contradicts the issue, that's a real finding: read it before you answer. |
 | DuckDB says a file is locked | Close any other `duckdb` session on that warehouse. |
 | Proof Agent posts a timeout | Version 1.1.2 waits a fixed 60 seconds for the review; the workflow uses a fast model to fit. Re-run the job, or show the reference pull request. |
 | Proof Agent posts an authorisation error | The organisation must allow Copilot requests from Actions. Show the reference pull request instead. |
