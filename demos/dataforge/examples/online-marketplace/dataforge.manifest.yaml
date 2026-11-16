@@ -40,3 +40,11 @@ overrides:
     # boundary doing its job: a new business word enters through the manifest,
     # not through a skill.
     verbs: ["meet", "miss"]
+
+  # forge-init discovers domains from the folders in the metric store, so it
+  # only finds Order. Dispatch, the entity the demo builds, doesn't exist yet.
+  # Declaring its domain here answers forge-builder's "which domain does this
+  # new tool belong to?" before it is asked.
+  domains:
+    fulfilment:
+      tools: ["order", "dispatch"]

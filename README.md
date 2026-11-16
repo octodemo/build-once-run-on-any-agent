@@ -21,9 +21,9 @@ in a GitHub issue:
 
 1. **Copilot builds it with Dataforge.** In the GitHub Copilot app, Shishir
    Tewari's four Dataforge skills — unchanged — learn how this team builds
-   metrics, ask about the business rules, write the pipeline and its tests,
-   wait for a person to approve, deploy to Sydney East then Sydney West, and open a pull
-   request.
+   metrics, check the issue's business rules against the data, and stop for a
+   person twice: to approve the metric design, and to approve the deploy. Then
+   they deploy to Sydney East then Sydney West, and open a pull request.
 2. **A canvas shows what is happening.** A side panel in the Copilot app shows
    the question, the build and the results, read from real files.
 3. **Someone else checks the work.** On the pull request, human-owned
