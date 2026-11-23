@@ -24,7 +24,7 @@ pull request out, with Dataforge running in the GitHub Copilot app.
 | --- | --- |
 | `dataforge.manifest.yaml` | The seed manifest. A few lines of config; everything else is discovered. |
 | `seed.py` | Builds the warehouse. `--check` verifies an existing one. |
-| `marketplace_metric_store/` | The metric store `forge-init` scans to learn the house style. `Order` is built; `Dispatch` is what the demo builds. |
+| `marketplace_metric_store/` | The metric store `forge-init` scans to learn the house style. `Order` is preloaded. `Dispatch` includes pipelines, schema, tests, and approved policy documentation. |
 | `issues/` | The issue body used as intake for the demo. |
 | `warehouse/` | Generated DuckDB files. Not committed. |
 
@@ -38,7 +38,13 @@ one region is a real sequence rather than a duplicated command.
 | Fulfilment centre | Sydney East | Sydney West |
 | Merchants | 12 | 6 |
 | Source tables | `merchants`, `orders`, `dispatch_attempts` | same |
-| Built entities | `Order` only | `Order` only |
+| Deployed entities | `Order`, `Dispatch` | `Order`, `Dispatch` |
+
+The seed preloads only Order. The [Dispatch implementation](marketplace_metric_store/fulfilment/Dispatch/README.md)
+adds met/missed promise outcomes for both regions and cadences. Following
+schema approval, Dispatch was deployed to east, then west, with 30 snapshot
+dates from 2026-10-16 through 2026-11-14. Re-running the seed resets the warehouse
+to Order only.
 
 - `merchants`: the businesses that sell on the marketplace.
 - `orders`: one row per order — who sold it, when it was placed, when (if ever)
