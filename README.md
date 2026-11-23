@@ -11,6 +11,10 @@ unchanged. This fork adds **one runnable demo** that joins the talk's two
 examples into a single story: Dataforge builds a data pipeline in the GitHub
 Copilot app, and Proof Agent reviews the resulting pull request.
 
+## Sydney Slides
+
+Link to powerpoint: https://onedrive.cloud.microsoft/:p:/a@3r498cu9/S/cQqhi-uycg__Q7nv0AJu00nkEgUD0zVvpFCIbtIgpvepw04Ejg
+
 ## The demo in 30 seconds
 
 A fictional Australian online marketplace promises that every order leaves a
