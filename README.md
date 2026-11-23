@@ -15,6 +15,10 @@ Copilot app, and Proof Agent reviews the resulting pull request.
 
 Link to powerpoint: https://onedrive.cloud.microsoft/:p:/a@3r498cu9/S/cQqhi-uycg__Q7nv0AJu00nkEgUD0zVvpFCIbtIgpvepw04Ejg
 
+## The point to land
+
+Every organisation has a pipeline unique to their use case. Procore created one that captures their institutional knowledge. The audience needs to do the same for their organisations and can use Dataforge as an example of a framework to capture this knowledge for agents.
+
 ## The demo in 30 seconds
 
 A fictional Australian online marketplace promises that every order leaves a
